@@ -1,4 +1,0 @@
-
-[[bin]]
-name = "forge-server"
-path = "src/bin/forge-server.rs"
