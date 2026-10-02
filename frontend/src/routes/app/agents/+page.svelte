@@ -22,6 +22,11 @@
     const [m, a] = await Promise.all([mascots.list(), agents.list()]);
     mascotList = m.items;
     agentList = a.items;
+    // Seed per-agent state so `bind:value` never binds to undefined.
+    for (const agent of agentList) {
+      if (chatInputs[agent.slug] === undefined) chatInputs[agent.slug] = '';
+      if (chatLogs[agent.slug] === undefined) chatLogs[agent.slug] = [];
+    }
   }
 
   onMount(refresh);
@@ -150,7 +155,7 @@
         <Separator />
         <div class="flex gap-2">
           <Input data-testid="agent-input-{a.slug}" bind:value={chatInputs[a.slug]}
-            placeholder="Message this agent" />
+            placeholder={chatInputs[a.slug] === undefined ? 'Message this agent' : 'Message this agent'} />
           <Button size="sm" onclick={() => run(a.slug)} disabled={chatting !== null}
             data-testid="run-agent-{a.slug}">
             {#if chatting === a.slug}<Spinner size={12} />{/if}Run

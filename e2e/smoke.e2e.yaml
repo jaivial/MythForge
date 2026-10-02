@@ -1,0 +1,22 @@
+defaults: { profile: none, timeout: 900 }
+tests:
+  - name: the landing route sends visitors to the login screen
+    steps:
+      - open: /
+      - expect: { url_contains: /login }
+      - expect: { title_contains: MythForge }
+      - expect: { locator: testid=login-form, count: 1 }
+
+  - name: a visitor can create a workspace from the signup form
+    steps:
+      - open: /login
+      - act: create a new workspace signing up with a unique email (use e2e-<random>@mythforge.test), password supersecret1, your name E2E Runner, company name E2E Smoke Co, keeping the CRM template
+      - expect: { url_contains: /app }
+      - expect: { locator: testid=sidebar, count: 1 }
+
+  - name: wrong password shows an error and stays on login
+    steps:
+      - open: /login
+      - act: switch to the Sign in tab, type e2e-wrong@mythforge.test and password supersecret1 and submit
+      - expect: { url_contains: /login }
+      - expect: { locator: testid=login-error, count: 1 }

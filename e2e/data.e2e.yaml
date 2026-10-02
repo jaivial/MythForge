@@ -1,0 +1,28 @@
+defaults: { profile: none, timeout: 900 }
+tests:
+  - name: records can be created and searched in a generated entity
+    steps:
+      # Clear any cached session so the signup below always creates a fresh,
+      # empty workspace (cached logins made record counts vary between runs).
+      - open: /login
+      - act: if a session is active, sign out so the signup form is showing
+      - act: >
+          sign up a fresh workspace (unique email e2e-data-<random>@mythforge.test, password
+          supersecret1, name E2E Data, company E2E Data Co, CRM template)
+      - act: navigate to the CRM module and its lead entity
+      - expect: { locator: testid=records-table, count: 1 }
+      - act: >
+          create a new lead named "Golden Record" with stage New and value 1000, then save it
+      - expect: { locator: testid=record-row, count: '>=1' }
+      - act: type "Golden" into the search box and wait for the table to refresh
+      - assert: every row in the table is a Golden Record lead (no other records leak into the search)
+
+  - name: invalid select values are rejected by the form
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-valid-<random>@mythforge.test, password
+          supersecret1, name E2E Valid, company E2E Valid Co, CRM template)
+      - act: navigate to the lead entity and open the new record form
+      - expect: { locator: testid=record-form, count: 1 }
+      - assert: the stage field only offers New, Contacted, Qualified, Won and Lost

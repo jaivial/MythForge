@@ -1,0 +1,26 @@
+defaults: { profile: none, timeout: 900 }
+tests:
+  - name: prompting the builder creates a new module at runtime
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-build-<random>@mythforge.test, password
+          supersecret1, name E2E Builder, company E2E Build Co, CRM template)
+      - open: /app/build
+      - expect: { locator: testid=build-card, count: 1 }
+      - act: >
+          in the build prompt box describe (in Spanish) "un modulo de inventario con productos:
+          sku, nombre, stock y coste" and click the build button, then wait for the result
+      - expect: { locator: testid=build-result, count: 1 }
+      - assert: the result mentions the new inventory module
+      - open: /app
+      - assert: the workspace list shows an inventory module card
+
+  - name: the assistant panel answers questions about company data
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-chat-<random>@mythforge.test, password
+          supersecret1, name E2E Chat, company E2E Chat Co, CRM template)
+      - act: open the assistant panel and ask "how many leads do I have?"
+      - assert: the assistant replies with an answer about leads

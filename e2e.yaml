@@ -1,0 +1,10 @@
+# AI end-to-end tests for MythForge, run against the deployed nginx URL.
+base_url: https://forge.myth.services
+tests: [e2e]
+models:
+  worker: zai/glm-5.3-flash      # act steps: cheap and fast
+  judge: zai/glm-5.3-flash       # assert steps
+auth:
+  # MythForge has no shared test account: every scenario signs up its own
+  # company through the UI (that is the product), so no form profile is set.
+  default_profile: none
