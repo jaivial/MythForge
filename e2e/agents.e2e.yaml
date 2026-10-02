@@ -1,0 +1,27 @@
+defaults: { profile: none, timeout: 900 }
+tests:
+  - name: mascots and agents can be composed from a prompt
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-agents-<random>@mythforge.test, password
+          supersecret1, name E2E Agents, company E2E Agents Co, CRM template)
+      - act: go to the Agents page and create a mascot named "Forge Owl" with any persona
+      - expect: { locator: '[data-testid^="mascot-"]', count: 1 }
+      - act: >
+          in the compose box ask for an agent that "counts open leads and summarises their value",
+          draft it, then create the agent
+      - expect: { locator: '[data-testid^="agent-"]', count: 1 }
+      - assert: the created agent lists at least one tool
+
+  - name: settings shows google and automation states
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-settings-<random>@mythforge.test, password
+          supersecret1, name E2E Settings, company E2E Settings Co, CRM template)
+      - act: open the Settings page
+      - expect: { locator: testid=google-card, count: 1 }
+      - expect: { locator: testid=automations-card, count: 1 }
+      - assert: the google card states the integration is not connected
+      - assert: the automations card says there are no automations yet

@@ -60,7 +60,11 @@
   });
 
   function openCreate() {
-    form = {};
+    // Pre-seed every field so `bind:value` never binds to undefined
+    // (Svelte rejects undefined props and aborts the render).
+    const seed: Record<string, string> = {};
+    for (const f of entity?.fields ?? []) seed[f.slug] = '';
+    form = seed;
     formError = '';
     formOpen = true;
   }
