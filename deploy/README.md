@@ -18,6 +18,7 @@ new modules: the blueprint lives in the tenant database and the generic
 ## Build and run
 
 ```bash
+# Requires Node 20+ (npm ci uses the committed package-lock.json).
 cd frontend && npm ci && npm run build     # static bundle mounted by web
 cd ../deploy
 cp .env.docker .env                        # fill ANTHROPIC_API_KEY, JWT_SECRET
@@ -33,7 +34,12 @@ Services:
 | api       | mythforge-api    | 18093     | Rust `forge-server`             |
 | web       | mythforge-web    | 18443     | nginx: SPA + `/api` proxy       |
 
-## Edge
+## Google OAuth
+
+`GOOGLE_REDIRECT_URL` must be the public URL, e.g.
+`https://forge.myth.services/api/v1/google/callback`, and must be registered in
+the Google Cloud console. `APP_URL` is used for links; it does not derive the
+redirect automatically.
 
 - DNS: `forge.myth.services` A â host IP, proxied (Cloudflare zone
   `myth.services`, SSL mode flexible).
