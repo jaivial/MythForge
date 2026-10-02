@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.svelte-kit/
+target/
+.env
+.env.local
+*.log
+.e2e-cache/
+.e2e-runs/
+.DS_Store
+coverage/
+tmp/
+backend/.env
