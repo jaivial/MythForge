@@ -87,6 +87,7 @@ pub fn api_router(state: SharedState) -> Router {
         .route("/agents/:slug/run", post(r::run_agent))
         // automations
         .route("/automations", get(r::list_automations).post(r::create_automation))
+        .route("/automations/compose", post(r::compose_automation))
         .route("/automations/:id", delete(r::delete_automation))
         .route("/automations/:id/run", post(r::run_automation_now))
         // assistant chat

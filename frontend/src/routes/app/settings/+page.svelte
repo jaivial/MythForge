@@ -1,11 +1,33 @@
 <script lang="ts">
   import { google, automations, workspace } from '$lib/api/endpoints';
+  import { Input } from '$lib/components/ui';
   import { Badge, Button, Card, Separator, Spinner } from '$lib/components/ui';
   import { onMount } from 'svelte';
   import { session, logout } from '$lib/stores/session';
 
   let g = $state<{ connected: boolean; email?: string | null; configured: boolean } | null>(null);
-  let autos = $state<{ id: string; name: string; run_count: number; is_active: boolean }[]>([]);
+  let autos = $state<
+    {
+      id: string;
+      name: string;
+      description: string;
+      trigger: Record<string, unknown>;
+      run_count: number;
+      is_active: boolean;
+    }[]
+  >([]);
+  let autoPrompt = $state('');
+  let autoDraft = $state<{
+    name: string;
+    description: string;
+    trigger: Record<string, unknown> & { kind?: string; module?: string; entity?: string; interval_seconds?: number };
+    action: Record<string, unknown> & { prompt?: string };
+    agent_id: string | null;
+  } | null>(null);
+  let autoBusy = $state(false);
+  let autoError = $state('');
+  let agentDropped = $state(false);
+  let agentNames = $state<Record<string, string>>({});
   let bp = $state<{ modules: { slug: string; name: string }[] } | null>(null);
   let loading = $state(true);
   let error = $state('');
@@ -24,6 +46,48 @@
       loading = false;
     }
   });
+
+  /** Draft an automation from a prompt, then create it on confirm. */
+  async function composeAuto() {
+    if (!autoPrompt.trim()) return;
+    autoBusy = true;
+    autoError = '';
+    try {
+      const r = await automations.compose(autoPrompt.trim());
+      autoDraft = r.draft;
+      agentDropped = r.agent_dropped;
+      agentNames = Object.fromEntries(r.agents.map((a) => [a.id, a.name]));
+    } catch (e) {
+      autoError = e instanceof Error ? e.message : 'Compose failed';
+    } finally {
+      autoBusy = false;
+    }
+  }
+
+  async function createAuto() {
+    if (!autoDraft) return;
+    autoBusy = true;
+    try {
+      await automations.create(autoDraft);
+      autoDraft = null;
+      autoPrompt = '';
+      const as = await automations.list();
+      autos = as.items;
+    } finally {
+      autoBusy = false;
+    }
+  }
+
+  async function runAuto(id: string) {
+    await automations.runNow(id);
+    const as = await automations.list();
+    autos = as.items;
+  }
+
+  async function removeAuto(id: string) {
+    await automations.remove(id);
+    autos = (await automations.list()).items;
+  }
 
   async function connect() {
     const c = await google.connect();
@@ -94,15 +158,55 @@
     <Card class="flex flex-col gap-3 p-6" data-testid="automations-card">
       <h2 class="font-medium">Automations</h2>
       <Separator />
+      <div class="flex gap-2">
+        <Input data-testid="auto-prompt" bind:value={autoPrompt}
+          placeholder="e.g. cada hora revisa stock bajo y avisame" />
+        <Button size="sm" onclick={composeAuto} disabled={autoBusy || !autoPrompt.trim()}
+          data-testid="auto-compose">{autoBusy ? '...' : 'Draft'}</Button>
+      </div>
+      {#if autoError}<p class="text-sm text-danger" data-testid="auto-error">{autoError}</p>{/if}
+      {#if autoDraft}
+        <div class="flex flex-col gap-2 rounded-md border border-border p-3" data-testid="auto-draft">
+          <span class="text-sm font-medium">{autoDraft.name}</span>
+          <p class="text-xs text-muted-foreground">{autoDraft.description}</p>
+          <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <Badge variant="outline">{String(autoDraft.trigger.kind ?? 'schedule')}</Badge>
+            {#if autoDraft.trigger.module}
+              <Badge variant="outline">{String(autoDraft.trigger.module)}/{String(autoDraft.trigger.entity ?? '')}</Badge>
+            {/if}
+            {#if autoDraft.trigger.interval_seconds}
+              <Badge variant="outline">every {String(autoDraft.trigger.interval_seconds)}s</Badge>
+            {/if}
+          </div>
+          <p class="text-xs text-muted-foreground">{String(autoDraft.action.prompt ?? '')}</p>
+          {#if autoDraft.agent_id}
+            <Badge variant="outline" data-testid="auto-agent">
+              agent: {agentNames[autoDraft.agent_id] ?? autoDraft.agent_id}
+            </Badge>
+          {:else if agentDropped}
+            <Badge variant="warning" data-testid="auto-agent-dropped">
+              named agent not found - runs with the default assistant
+            </Badge>
+          {/if}
+          <Button size="sm" onclick={createAuto} disabled={autoBusy} data-testid="auto-create">
+            Create automation
+          </Button>
+        </div>
+      {/if}
       {#each autos as a (a.id)}
         <div class="flex items-center justify-between" data-testid="automation-{a.id}">
-          <span class="text-sm">{a.name}</span>
-          <Badge variant="outline">{a.run_count} runs</Badge>
+          <div class="flex flex-col">
+            <span class="text-sm">{a.name}</span>
+            <span class="text-xs text-muted-foreground">{String(a.trigger?.kind ?? '')}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <Badge variant="outline">{a.run_count} runs</Badge>
+            <Button size="sm" variant="ghost" onclick={() => runAuto(a.id)}>Run</Button>
+            <Button size="sm" variant="ghost" onclick={() => removeAuto(a.id)}>Delete</Button>
+          </div>
         </div>
       {:else}
-        <p class="text-sm text-muted-foreground">
-          No automations yet. Ask the assistant to create one.
-        </p>
+        <p class="text-sm text-muted-foreground">No automations yet.</p>
       {/each}
     </Card>
 
