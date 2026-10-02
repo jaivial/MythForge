@@ -1,0 +1,43 @@
+/* MythForge theme: dark 90% / white 70% / gray-silver 85% palette. */
+@import 'tailwindcss';
+
+@theme {
+  /* Base surfaces - dark-first */
+  --color-background: #0b0d10;
+  --color-surface: #12151a;
+  --color-surface-2: #171b21;
+  --color-foreground: #e8eaed;
+  /* Gray / silver family (~85% of the palette) */
+  --color-muted: #1d2229;
+  --color-muted-foreground: #9aa3b0;
+  --color-border: #262c35;
+  --color-border-strong: #333b47;
+  /* Silver accent */
+  --color-silver: #c8ccd2;
+  --color-silver-dim: #8b93a1;
+  /* Semantic */
+  --color-primary: #c8ccd2;
+  --color-primary-foreground: #0b0d10;
+  --color-danger: #d9534f;
+  --color-success: #4cae4c;
+  --color-warning: #e8b04b;
+}
+
+html, body { height: 100%; }
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+* { border-color: var(--color-border); }
+
+/* shadcn-style utility layers, applied via classes in components */
+@utility card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+}
+@utility muted {
+  color: var(--color-muted-foreground);
+}

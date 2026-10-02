@@ -136,11 +136,18 @@ pub async fn list_records(
         idx += 1;
     }
     for (k, v) in filters {
-        sql.push_str(&format!(" AND data->>${} = ${}", quote_ident(k), idx));
+        // `data->>'field'` needs a literal quoted key: the placeholder position
+        // goes inside a parameterised cast instead, so the key is sanitised by
+        // `quote_ident` (alphanumeric + underscore only) and never injectable.
+        sql.push_str(&format!(" AND data->>{} = ${}", quote_ident(k), idx));
         binds.push(v.clone());
         idx += 1;
     }
-    sql.push_str(&format!(" ORDER BY updated_at DESC LIMIT ${} OFFSET ${}", idx, idx + 1));
+    // LIMIT/OFFSET are bound as text (the bind list is homogeneous), so cast them.
+    sql.push_str(&format!(
+        " ORDER BY updated_at DESC LIMIT ${}::bigint OFFSET ${}::bigint",
+        idx, idx + 1
+    ));
     binds.push(limit.to_string());
     binds.push(offset.to_string());
 
@@ -167,9 +174,13 @@ pub async fn list_records(
     }))
 }
 
-/// `data->>key` with the key quoted safely (no injection through field names).
+/// `data->>'key'` with the key reduced to `[A-Za-z0-9_]` and emitted as a SQL
+/// string literal, so a filter name can never break out of the expression.
 fn quote_ident(k: &str) -> String {
-    let clean: String = k.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '_').collect();
+    let clean: String = k
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+        .collect();
     format!("'{}'", clean)
 }
 
