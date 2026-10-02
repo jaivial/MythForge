@@ -2,7 +2,10 @@ defaults: { profile: none, timeout: 900 }
 tests:
   - name: records can be created and searched in a generated entity
     steps:
+      # Clear any cached session so the signup below always creates a fresh,
+      # empty workspace (cached logins made record counts vary between runs).
       - open: /login
+      - act: if a session is active, sign out so the signup form is showing
       - act: >
           sign up a fresh workspace (unique email e2e-data-<random>@mythforge.test, password
           supersecret1, name E2E Data, company E2E Data Co, CRM template)
