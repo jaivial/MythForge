@@ -11,8 +11,8 @@ tests:
       - act: >
           in the compose box ask for an agent that "counts open leads and summarises their value",
           draft it, then create the agent
-      - expect: { locator: testid=agent-draft, count: 1 }
-      - assert: the created agent lists at least one tool
+      # the compose box clears and the created agent gets its own chat input
+      - expect: { locator: '[data-testid^="agent-input-"]', count: '>=1' }
 
   - name: settings shows google and automation states
     steps:

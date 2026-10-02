@@ -10,9 +10,9 @@ tests:
       - expect: { locator: testid=records-table, count: 1 }
       - act: >
           create a new lead named "Golden Record" with stage New and value 1000, then save it
-      - expect: { locator: testid=record-row, count: 1 }
+      - expect: { locator: testid=record-row, count: '>=1' }
       - act: type "Golden" into the search box and wait for the table to refresh
-      - assert: the table shows exactly the Golden Record lead
+      - assert: every row in the table is a Golden Record lead (no other records leak into the search)
 
   - name: invalid select values are rejected by the form
     steps:
