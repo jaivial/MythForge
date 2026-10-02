@@ -25,6 +25,14 @@ async function req<T>(path: string, init: RequestInit = {}): Promise<T> {
   const t = token();
   if (t) headers.Authorization = `Bearer ${t}`;
   const res = await fetch(`${BASE}${path}`, { ...init, headers });
+  if (res.status === 401 || res.status === 403) {
+    // Session expired or invalid: drop it and send the user back to login.
+    localStorage.removeItem('mf_token');
+    localStorage.removeItem('mf_session');
+    if (typeof location !== 'undefined' && !location.pathname.startsWith('/login')) {
+      location.href = '/login';
+    }
+  }
   if (!res.ok) {
     let code = 'error';
     let message = res.statusText;

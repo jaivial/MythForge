@@ -44,6 +44,14 @@
     }
   }
 
+  let searchTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Debounced search: reload once typing settles. */
+  function onSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(load, 250);
+  }
+
   onMount(load);
   $effect(() => {
     void entitySlug;
@@ -92,7 +100,8 @@
   const columns = $derived(groupField?.choices ?? []);
 
   function byColumn(choice: string): Record_[] {
-    return records.filter((r) => String(r.data[groupField?.slug ?? '']) === choice);
+    const key = groupField?.slug ?? '';
+    return records.filter((r) => String(r.data[key] ?? '') === String(choice));
   }
 </script>
 
@@ -140,8 +149,8 @@
 {:else}
   <Card data-testid="records-table">
     <div class="flex items-center gap-2 border-b border-border p-3">
-      <Input data-testid="search" bind:value={search} placeholder="Searchâ¦"
-        oninput={() => setTimeout(load, 250)} class="max-w-xs" />
+      <Input data-testid="search" bind:value={search} placeholder="Search..."
+        oninput={onSearch} class="max-w-xs" />
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm">

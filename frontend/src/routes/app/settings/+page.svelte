@@ -8,6 +8,7 @@
   let autos = $state<{ id: string; name: string; run_count: number; is_active: boolean }[]>([]);
   let bp = $state<{ modules: { slug: string; name: string }[] } | null>(null);
   let loading = $state(true);
+  let error = $state('');
 
   onMount(async () => {
     try {
@@ -26,8 +27,11 @@
 
   async function connect() {
     const c = await google.connect();
-    const token = localStorage.getItem('mf_token') ?? '';
-    location.href = `${c.client_id ? '' : ''}`; // replaced below
+    const token = localStorage.getItem('mf_token');
+    if (!token) {
+      error = 'Session missing — sign in again before connecting Google.';
+      return;
+    }
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.searchParams.set('client_id', c.client_id);
     url.searchParams.set('redirect_uri', c.redirect_url);

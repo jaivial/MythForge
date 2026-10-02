@@ -18,6 +18,7 @@
   });
 
   onMount(async () => {
+    if (!$session) return;
     try {
       blueprint = await workspace.blueprint();
     } catch {

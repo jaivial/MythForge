@@ -11,9 +11,9 @@
   let draft = $state<{ name: string; description: string; system_prompt: string } | null>(null);
   let draftTools = $state<string[]>([]);
   let error = $state('');
-  let chatLog = $state<{ role: 'user' | 'assistant'; text: string }[]>([]);
-  let chatInput = $state('');
-  let chatting = $state(false);
+  let chatLogs = $state<Record<string, { role: 'user' | 'assistant'; text: string }[]>>({});
+  let chatInputs = $state<Record<string, string>>({});
+  let chatting = $state<string | null>(null);
   let mascotName = $state('');
   let mascotPersona = $state('');
   let creatingMascot = $state(false);
@@ -75,19 +75,29 @@
     }
   }
 
+  /** Per-agent conversation, keyed by agent slug. */
   async function run(agentSlug: string) {
-    if (!chatInput.trim()) return;
-    const message = chatInput.trim();
-    chatInput = '';
-    chatLog.push({ role: 'user', text: message });
-    chatting = true;
+    const message = (chatInputs[agentSlug] ?? '').trim();
+    if (!message) return;
+    chatInputs[agentSlug] = '';
+    chatLogs[agentSlug] = [
+      ...(chatLogs[agentSlug] ?? []),
+      { role: 'user', text: message }
+    ];
+    chatting = agentSlug;
     try {
       const r = await agents.run(agentSlug, message);
-      chatLog.push({ role: 'assistant', text: r.text });
+      chatLogs[agentSlug] = [
+        ...chatLogs[agentSlug],
+        { role: 'assistant', text: r.text }
+      ];
     } catch (e) {
-      chatLog.push({ role: 'assistant', text: e instanceof Error ? e.message : 'Run failed' });
+      chatLogs[agentSlug] = [
+        ...chatLogs[agentSlug],
+        { role: 'assistant', text: e instanceof Error ? e.message : 'Run failed' }
+      ];
     } finally {
-      chatting = false;
+      chatting = null;
     }
   }
 </script>
@@ -139,15 +149,16 @@
         </div>
         <Separator />
         <div class="flex gap-2">
-          <Input data-testid="agent-input-{a.slug}" bind:value={chatInput}
-            placeholder="Message this agentâ¦" />
-          <Button size="sm" onclick={() => run(a.slug)} disabled={chatting} data-testid="run-agent-{a.slug}">
-            {#if chatting}<Spinner size={12} />{/if}Run
+          <Input data-testid="agent-input-{a.slug}" bind:value={chatInputs[a.slug]}
+            placeholder="Message this agent" />
+          <Button size="sm" onclick={() => run(a.slug)} disabled={chatting !== null}
+            data-testid="run-agent-{a.slug}">
+            {#if chatting === a.slug}<Spinner size={12} />{/if}Run
           </Button>
         </div>
-        {#if chatLog.length}
-          <div class="flex flex-col gap-2" data-testid="agent-chat">
-            {#each chatLog as c, i}
+        {#if chatLogs[a.slug]?.length}
+          <div class="flex flex-col gap-2" data-testid="agent-chat-{a.slug}">
+            {#each chatLogs[a.slug] as c, i (i)}
               <div class="rounded-md px-3 py-2 text-sm {c.role === 'user'
                 ? 'bg-muted text-foreground' : 'bg-surface-2 text-muted-foreground'}">{c.text}</div>
             {/each}
