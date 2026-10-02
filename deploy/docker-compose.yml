@@ -34,9 +34,12 @@ services:
       APP_URL: ${APP_URL:-http://localhost:8080}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URL: ${GOOGLE_REDIRECT_URL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      ANTHROPIC_MAX_TOKENS: ${ANTHROPIC_MAX_TOKENS:-8192}
       RUST_LOG: info,sqlx=warn
     ports:
-      - "127.0.0.1:8090:8080"
+      - "127.0.0.1:18093:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,6 +47,24 @@ services:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 10s
       timeout: 5s
+      retries: 12
+
+  # Static frontend + /api reverse proxy, the edge nginx vhost points here.
+  web:
+    image: nginx:1.27-alpine
+    container_name: mythforge-web
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:18443:80"
+    volumes:
+      - ./nginx-web.conf:/etc/nginx/conf.d/default.conf:ro
+      - ../frontend/build:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
       retries: 12
 
 volumes:
