@@ -60,6 +60,7 @@ export const automations = {
         action: Record<string, unknown> & { prompt?: string };
         agent_id: string | null;
       };
+      agent_dropped: boolean;
       agents: { id: string; name: string }[];
     }>('/automations/compose', { prompt }),
   create: (a: Partial<Automation>) => api.post<Automation>('/automations', a),

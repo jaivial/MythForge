@@ -26,6 +26,8 @@
   } | null>(null);
   let autoBusy = $state(false);
   let autoError = $state('');
+  let agentDropped = $state(false);
+  let agentNames = $state<Record<string, string>>({});
   let bp = $state<{ modules: { slug: string; name: string }[] } | null>(null);
   let loading = $state(true);
   let error = $state('');
@@ -53,6 +55,8 @@
     try {
       const r = await automations.compose(autoPrompt.trim());
       autoDraft = r.draft;
+      agentDropped = r.agent_dropped;
+      agentNames = Object.fromEntries(r.agents.map((a) => [a.id, a.name]));
     } catch (e) {
       autoError = e instanceof Error ? e.message : 'Compose failed';
     } finally {
@@ -175,6 +179,15 @@
             {/if}
           </div>
           <p class="text-xs text-muted-foreground">{String(autoDraft.action.prompt ?? '')}</p>
+          {#if autoDraft.agent_id}
+            <Badge variant="outline" data-testid="auto-agent">
+              agent: {agentNames[autoDraft.agent_id] ?? autoDraft.agent_id}
+            </Badge>
+          {:else if agentDropped}
+            <Badge variant="warning" data-testid="auto-agent-dropped">
+              named agent not found - runs with the default assistant
+            </Badge>
+          {/if}
           <Button size="sm" onclick={createAuto} disabled={autoBusy} data-testid="auto-create">
             Create automation
           </Button>

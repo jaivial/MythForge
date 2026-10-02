@@ -609,16 +609,15 @@ pub async fn compose_automation(
     .fetch_all(&state.pool)
     .await?;
     let system = r#"You are MythForge's automation composer. Given a request, the operation registry and the company blueprint, draft ONE automation as JSON with keys: name, description, trigger, action, agent_id. trigger is {"kind":"schedule","interval_seconds":3600} or {"kind":"record_created","module":"...","entity":"..."} or {"kind":"record_updated","module":"...","entity":"..."}. action is {"prompt":"instruction the agent runs"}. Use module/entity slugs that exist in the blueprint and agent ids from the agent list (or null to use the default assistant). Answer JSON only."#;
+    let bp = runtime::blueprint(&pool).await?;
     let user_msg = json!({
         "request": prompt,
         "operation_registry": ops,
-        "company_blueprint": runtime::blueprint(&pool).await?,
+        "company_blueprint": bp,
         "agents": agents.iter().map(|(id, name)| json!({"id": id, "name": name})).collect::<Vec<_>>(),
     })
     .to_string();
     let drafted = state.ai.complete_json(&system, &user_msg).await?;
-    // Normalise: only known trigger kinds, only blueprint modules/entities.
-    let bp = runtime::blueprint(&pool).await?;
     let mut trigger = drafted["trigger"].clone();
     let kind = trigger["kind"].as_str().unwrap_or("schedule").to_string();
     let valid_kinds = ["schedule", "record_created", "record_updated"];
@@ -647,10 +646,9 @@ pub async fn compose_automation(
             trigger = json!({"kind": "schedule", "interval_seconds": 3600});
         }
     }
-    let agent_id = drafted["agent_id"]
-        .as_str()
-        .and_then(|s| Uuid::parse_str(s).ok())
-        .filter(|id| agents.iter().any(|(aid, _)| aid == id));
+    let requested_agent = drafted["agent_id"].as_str().and_then(|s| Uuid::parse_str(s).ok());
+    let agent_id = requested_agent.filter(|id| agents.iter().any(|(aid, _)| aid == id));
+    let agent_dropped = requested_agent.is_some() && agent_id.is_none();
     Ok(Json(json!({
         "draft": {
             "name": drafted["name"].as_str().unwrap_or("New automation"),
@@ -663,6 +661,9 @@ pub async fn compose_automation(
             },
             "agent_id": agent_id,
         },
+        // True when the model named an agent that does not exist: the automation
+        // will run with the default assistant instead.
+        "agent_dropped": agent_dropped,
         "agents": agents.iter().map(|(id, name)| json!({"id": id, "name": name})).collect::<Vec<_>>(),
     })))
 }
