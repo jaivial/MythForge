@@ -589,6 +589,84 @@ pub async fn list_automations(
     })).collect::<Vec<_>>() })))
 }
 
+/// Draft an automation (trigger + action + optional agent) from a natural
+/// language prompt. Returns the draft for review; the UI creates it.
+pub async fn compose_automation(
+    State(state): State<SharedState>,
+    AdminUser(user): AdminUser,
+    Json(body): Json<Value>,
+) -> Result<Json<Value>> {
+    let prompt = body["prompt"].as_str().unwrap_or("").trim();
+    if prompt.is_empty() {
+        return Err(Error::BadRequest("prompt is required".into()));
+    }
+    let (_cid, pool) = company_pool(&state, &user, None).await?;
+    let ops = state.registry.search("", 50);
+    let agents: Vec<(Uuid, String)> = sqlx::query_as(
+        "SELECT id, name FROM agent WHERE company_id = $1 ORDER BY name",
+    )
+    .bind(user.company_id)
+    .fetch_all(&state.pool)
+    .await?;
+    let system = r#"You are MythForge's automation composer. Given a request, the operation registry and the company blueprint, draft ONE automation as JSON with keys: name, description, trigger, action, agent_id. trigger is {"kind":"schedule","interval_seconds":3600} or {"kind":"record_created","module":"...","entity":"..."} or {"kind":"record_updated","module":"...","entity":"..."}. action is {"prompt":"instruction the agent runs"}. Use module/entity slugs that exist in the blueprint and agent ids from the agent list (or null to use the default assistant). Answer JSON only."#;
+    let user_msg = json!({
+        "request": prompt,
+        "operation_registry": ops,
+        "company_blueprint": runtime::blueprint(&pool).await?,
+        "agents": agents.iter().map(|(id, name)| json!({"id": id, "name": name})).collect::<Vec<_>>(),
+    })
+    .to_string();
+    let drafted = state.ai.complete_json(&system, &user_msg).await?;
+    // Normalise: only known trigger kinds, only blueprint modules/entities.
+    let bp = runtime::blueprint(&pool).await?;
+    let mut trigger = drafted["trigger"].clone();
+    let kind = trigger["kind"].as_str().unwrap_or("schedule").to_string();
+    let valid_kinds = ["schedule", "record_created", "record_updated"];
+    if !valid_kinds.contains(&kind.as_str()) {
+        trigger["kind"] = json!("schedule");
+    }
+    if kind != "schedule" {
+        let module = trigger["module"].as_str().unwrap_or("").to_string();
+        let entity = trigger["entity"].as_str().unwrap_or("").to_string();
+        let module_ok = bp["modules"]
+            .as_array()
+            .map(|ms| ms.iter().any(|m| m["slug"].as_str() == Some(module.as_str())))
+            .unwrap_or(false);
+        let entity_ok = bp["modules"]
+            .as_array()
+            .map(|ms| {
+                ms.iter().any(|m| {
+                    m["entities"]
+                        .as_array()
+                        .map(|es| es.iter().any(|e| e["slug"].as_str() == Some(entity.as_str())))
+                        .unwrap_or(false)
+                })
+            })
+            .unwrap_or(false);
+        if !module_ok || !entity_ok {
+            trigger = json!({"kind": "schedule", "interval_seconds": 3600});
+        }
+    }
+    let agent_id = drafted["agent_id"]
+        .as_str()
+        .and_then(|s| Uuid::parse_str(s).ok())
+        .filter(|id| agents.iter().any(|(aid, _)| aid == id));
+    Ok(Json(json!({
+        "draft": {
+            "name": drafted["name"].as_str().unwrap_or("New automation"),
+            "description": drafted["description"].as_str().unwrap_or(""),
+            "trigger": trigger,
+            "action": if drafted["action"].is_object() {
+                drafted["action"].clone()
+            } else {
+                json!({"prompt": drafted["action"].as_str().unwrap_or(prompt)})
+            },
+            "agent_id": agent_id,
+        },
+        "agents": agents.iter().map(|(id, name)| json!({"id": id, "name": name})).collect::<Vec<_>>(),
+    })))
+}
+
 pub async fn create_automation(
     State(state): State<SharedState>,
     AdminUser(user): AdminUser,

@@ -78,8 +78,9 @@ export interface Automation {
   agent_id?: string | null;
   name: string;
   description: string;
-  trigger: { kind: string; entity?: string; interval_seconds?: number };
-  action: { kind: string; prompt?: string };
+  trigger: { kind?: string; module?: string; entity?: string; interval_seconds?: number } &
+    Record<string, unknown>;
+  action: { kind?: string; prompt?: string } & Record<string, unknown>;
   is_active: boolean;
   last_run_at?: string | null;
   run_count: number;

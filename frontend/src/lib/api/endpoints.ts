@@ -51,6 +51,17 @@ export const agents = {
 
 export const automations = {
   list: () => api.get<{ items: Automation[] }>('/automations'),
+  compose: (prompt: string) =>
+    api.post<{
+      draft: {
+        name: string;
+        description: string;
+        trigger: Record<string, unknown> & { kind?: string };
+        action: Record<string, unknown> & { prompt?: string };
+        agent_id: string | null;
+      };
+      agents: { id: string; name: string }[];
+    }>('/automations/compose', { prompt }),
   create: (a: Partial<Automation>) => api.post<Automation>('/automations', a),
   remove: (id: string) => api.del<{ deleted: boolean }>(`/automations/${id}`),
   runNow: (id: string) => api.post<{ ran: boolean }>(`/automations/${id}/run`)
