@@ -1,0 +1,22 @@
+# Vendored fork of `misanthropy` v0.0.8 (MIT, https://github.com/cortesi/misanthropy)
+# Local additions: `Anthropic::with_base_url()` / `base_url()` so MythForge can point the
+# Anthropic Messages API client at any Anthropic-compatible gateway (z.ai GLM, MiniMax, ...).
+[package]
+name = "misanthropy"
+version = "0.0.8"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/cortesi/misanthropy"
+description = "An interface to the Anthropic API (vendored fork for MythForge)"
+
+[dependencies]
+base64 = "0.22"
+futures-util = "0.3"
+log = "0.4"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+reqwest-eventsource = "0.6"
+schemars = "0.9"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = "1"

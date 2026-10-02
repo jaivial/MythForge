@@ -12,3 +12,4 @@ target/
 coverage/
 tmp/
 backend/.env
+backend/target/
