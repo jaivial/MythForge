@@ -1,0 +1,63 @@
+# Signup, templates and validation of the onboarding flow.
+defaults: { profile: none, timeout: 900 }
+tests:
+  - name: the ERP template provisions a full set of modules
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-erp-<random>@mythforge.test, password
+          supersecret1, name E2E ERP, company E2E ERP Co, ERP template)
+      - open: /app
+      - wait: 2
+      - expect: { locator: testid=sidebar, count: 1 }
+      - assert: >
+          the workspace lists the ERP starter modules inventory and sales with their
+          product and order entities
+      - expect: { locator: testid=module-inventory, count: 1 }
+      - expect: { locator: testid=module-sales, count: 1 }
+
+  - name: a blank workspace starts empty and invites a first build
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-blank-<random>@mythforge.test, password
+          supersecret1, name E2E Blank, company E2E Blank Co, blank template)
+      - open: /app
+      - wait: 2
+      - expect: { locator: testid=sidebar, count: 1 }
+      - expect: { locator: testid=goto-build, count: 1 }
+      - assert: the workspace shows the empty state with a link to Build
+
+  - name: signup rejects a second account with the same email
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-dup-<random>@mythforge.test, password
+          supersecret1, name E2E Dup, company E2E Dup Co, CRM template)
+      - expect: { locator: testid=sidebar, count: 1 }
+      - act: sign out
+      - act: >
+          try to sign up again with exactly the same email and password; the form should
+          be rejected, not silently accepted
+      - expect: { locator: testid=login-error, count: 1 }
+
+  - name: signup rejects an obviously invalid email
+    steps:
+      - open: /login
+      - act: >
+          fill the signup form with email "not-an-email", password supersecret1, name
+          Invalid, company Invalid Co and CRM template, and submit
+      - expect: { url_contains: /login }
+
+  - name: a short password cannot be submitted
+    steps:
+      - open: /login
+      - act: >
+          fill the signup form with a unique email e2e-short-<random>@mythforge.test and
+          the 3 character password "abc", name Short, company Short Co, CRM template, then
+          try to submit the form
+      # Native minlength validation blocks the submit: the browser stays on /login
+      # and no error is needed because nothing was sent.
+      - expect: { url_contains: /login }
+      - expect: { locator: testid=login-form, count: 1 }
+      - assert: the password field rejects the 3 character value as invalid instead of sending it

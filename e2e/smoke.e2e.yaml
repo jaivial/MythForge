@@ -2,6 +2,8 @@ defaults: { profile: none, timeout: 900 }
 tests:
   - name: the landing route sends visitors to the login screen
     steps:
+      - open: /login
+      - act: if a session is active, sign out so no workspace is open
       - open: /
       - expect: { url_contains: /login }
       - expect: { title_contains: MythForge }
@@ -11,6 +13,8 @@ tests:
     steps:
       - open: /login
       - act: create a new workspace signing up with a unique email (use e2e-<random>@mythforge.test), password supersecret1, your name E2E Runner, company name E2E Smoke Co, keeping the CRM template
+      - open: /app
+      - wait: 2
       - expect: { url_contains: /app }
       - expect: { locator: testid=sidebar, count: 1 }
 

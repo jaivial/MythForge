@@ -110,8 +110,12 @@ impl Registry {
                 let score = lexical_score(&fold(&hay), &q);
                 (score, json!({ "id": id, "module": o.module(), "description": o.description(), "write": o.write(), "parameters": o.input_schema() }))
             })
-            .filter(|(s, _)| *s > 0)
+            .filter(|(s, _)| q.is_empty() || *s > 0)
             .collect();
+        // An empty query lists everything (registration order), a query ranks by score.
+        if q.is_empty() {
+            return scored.into_iter().take(limit).map(|(_, v)| v).collect();
+        }
         scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1["id"].to_string().cmp(&b.1["id"].to_string())));
         scored.into_iter().take(limit).map(|(_, v)| v).collect()
     }

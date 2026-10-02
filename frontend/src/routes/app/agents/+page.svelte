@@ -132,8 +132,9 @@
       <p class="text-sm text-muted-foreground">No mascots yet.</p>
     {/if}
     <Card class="flex flex-col gap-3 p-4">
-      <Input data-testid="mascot-name" bind:value={mascotName} placeholder="Mascot name" />
+      <Input data-testid="mascot-name" aria-label="Mascot name" bind:value={mascotName} placeholder="Mascot name" />
       <Textarea data-testid="mascot-persona" bind:value={mascotPersona} rows={2}
+        aria-label="Persona"
         placeholder="Persona: how it talks, what it cares about" />
       <Button size="sm" onclick={createMascot} disabled={creatingMascot || !mascotName.trim()}
         data-testid="create-mascot">Create mascot</Button>
@@ -154,7 +155,7 @@
         </div>
         <Separator />
         <div class="flex gap-2">
-          <Input data-testid="agent-input-{a.slug}" bind:value={chatInputs[a.slug]}
+          <Input data-testid="agent-input-{a.slug}" aria-label="Message this agent" bind:value={chatInputs[a.slug]}
             placeholder={chatInputs[a.slug] === undefined ? 'Message this agent' : 'Message this agent'} />
           <Button size="sm" onclick={() => run(a.slug)} disabled={chatting !== null}
             data-testid="run-agent-{a.slug}">
@@ -174,7 +175,7 @@
 
     <Card class="flex flex-col gap-3 p-4" data-testid="compose-card">
       <span class="text-sm font-medium">Compose an agent from a prompt</span>
-      <Textarea data-testid="compose-prompt" bind:value={prompt} rows={3}
+      <Textarea data-testid="compose-prompt" aria-label="Describe the agent you need" bind:value={prompt} rows={3}
         placeholder="e.g. an agent that reads low-stock products and drafts purchase orders" />
       <Button size="sm" onclick={compose} disabled={composing || !prompt.trim()} data-testid="compose-submit">
         {#if composing}<Spinner size={12} />{/if}Draft agent

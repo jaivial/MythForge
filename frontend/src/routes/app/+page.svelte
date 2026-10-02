@@ -3,7 +3,9 @@
   import { onMount } from 'svelte';
   import { Badge, Card, Separator } from '$lib/components/ui';
 
-  let modules = $state<{ slug: string; name: string; entities: number }[]>([]);
+  let modules = $state<
+    { slug: string; name: string; entities: number; entityNames: string[] }[]
+  >([]);
   let totals = $state<Record<string, number>>({});
   let loading = $state(true);
 
@@ -13,7 +15,8 @@
       modules = bp.modules.map((m) => ({
         slug: m.slug,
         name: m.name,
-        entities: m.entities.length
+        entities: m.entities.length,
+        entityNames: m.entities.map((e) => e.name)
       }));
       await Promise.all(
         bp.modules.map(async (m) => {
@@ -62,7 +65,9 @@
                hover:bg-muted transition-colors">
         <div class="flex flex-col">
           <span class="font-medium">{m.name}</span>
-          <span class="text-xs text-muted-foreground">{m.entities} entities</span>
+          <span class="text-xs text-muted-foreground"
+            >{m.entities} entities: {m.entityNames.join(', ')}</span
+          >
         </div>
         <Badge variant="outline">{totals[m.slug] ?? 0} records</Badge>
       </a>

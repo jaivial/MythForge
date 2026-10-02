@@ -1,0 +1,82 @@
+# Navigation, deep links, guards and layout behaviours of the app shell.
+defaults: { profile: none, timeout: 900 }
+tests:
+  - name: the sidebar lists the workspace modules and navigates between them
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-nav-<random>@mythforge.test, password
+          supersecret1, name E2E Nav, company E2E Nav Co, CRM template)
+      - expect: { locator: testid=sidebar, count: 1 }
+      - expect: { locator: testid=module-crm, count: 1 }
+      - click: testid=nav-agents
+      - expect: { url_contains: /app/agents }
+      - click: testid=nav-settings
+      - expect: { url_contains: /app/settings }
+      - click: testid=nav-build
+      - expect: { url_contains: /app/build }
+      - click: testid=nav-module-crm
+      - expect: { url_contains: /app/m/crm }
+
+  - name: deep links open the right entity without visiting the module first
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-deep-<random>@mythforge.test, password
+          supersecret1, name E2E Deep, company E2E Deep Co, CRM template)
+      - open: /app/m/crm/lead
+      - expect: { locator: testid=records-table, count: 1 }
+      - assert: the page shows the Lead entity, not an error
+
+  - name: an unknown entity slug shows an error instead of crashing
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-404-<random>@mythforge.test, password
+          supersecret1, name E2E 404, company E2E 404 Co, CRM template)
+      - open: /app/m/crm/does-not-exist
+      - expect: { locator: testid=entity-error, count: 1 }
+      - assert: the page stays usable and offers navigation back to the app
+
+  - name: the module landing redirects to its first entity
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mod-<random>@mythforge.test, password
+          supersecret1, name E2E Mod, company E2E Mod Co, CRM template)
+      - open: /app/m/crm
+      - wait: 3
+      - expect: { url_contains: /app/m/crm/ }
+      - expect: { locator: testid=records-table, count: 1 }
+
+  - name: an unknown module slug shows an error instead of another module
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mod404-<random>@mythforge.test,
+          password supersecret1, name E2E M404, company E2E M404 Co, CRM template)
+      - open: /app/m/does-not-exist
+      - wait: 2
+      - expect: { locator: testid=module-error, count: 1 }
+      - assert: the page says the module was not found and links back to the workspace
+
+  - name: logged-out visitors cannot open the workspace
+    steps:
+      - open: /app
+      - expect: { url_contains: /login }
+      - open: /app/agents
+      - expect: { url_contains: /login }
+      - open: /app/settings
+      - expect: { url_contains: /login }
+
+  - name: signing out returns the visitor to the login screen
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-out-<random>@mythforge.test, password
+          supersecret1, name E2E Out, company E2E Out Co, CRM template)
+      - open: /app
+      - wait: 2
+      - expect: { locator: testid=sidebar, count: 1 }
+      - act: sign out from the workspace
+      - expect: { url_contains: /login }
