@@ -7,11 +7,11 @@ tests:
           sign up a fresh workspace (unique email e2e-agents-<random>@mythforge.test, password
           supersecret1, name E2E Agents, company E2E Agents Co, CRM template)
       - act: go to the Agents page and create a mascot named "Forge Owl" with any persona
-      - expect: { locator: '[data-testid^="mascot-"]', count: 1 }
+      - expect: { locator: testid=mascot-forge_owl, count: 1 }
       - act: >
           in the compose box ask for an agent that "counts open leads and summarises their value",
           draft it, then create the agent
-      - expect: { locator: '[data-testid^="agent-"]', count: 1 }
+      - expect: { locator: testid=agent-draft, count: 1 }
       - assert: the created agent lists at least one tool
 
   - name: settings shows google and automation states
