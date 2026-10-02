@@ -29,7 +29,7 @@ impl Ai {
     pub async fn complete(&self, system: &str, user: &str) -> Result<String> {
         let mut req = MessagesRequest::default()
             .with_model(&self.model)
-            .with_max_tokens(self.max_tokens.min(1024));
+            .with_max_tokens(self.max_tokens);
         if !system.is_empty() {
             req = req.with_system(vec![Content::text(system)]);
         }
@@ -37,7 +37,7 @@ impl Ai {
         msg.content.push(Content::text(user));
         req.messages.push(msg);
         let resp = self.client.messages(&req).await?;
-        Ok(resp.format_content())
+        Ok(text_of(&resp))
     }
 
     /// JSON-only completion: the model is asked for a single JSON document and
@@ -114,6 +114,22 @@ pub fn parse_first_json(text: &str) -> Option<Value> {
 
 fn try_parse(s: &str) -> Option<Value> {
     serde_json::from_str::<Value>(s).ok()
+}
+
+/// Concatenate ONLY the text blocks of a response. GLM/Claude reasoning models
+/// emit `thinking` blocks; `MessagesResponse::format_content` would inline them
+/// as `[Thinking: ...]` noise that then breaks JSON parsing downstream.
+pub fn text_of(resp: &misanthropy::MessagesResponse) -> String {
+    resp.content
+        .iter()
+        .filter_map(|c| match c {
+            misanthropy::Content::Text(t) => Some(t.text.clone()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("")
+        .trim()
+        .to_string()
 }
 
 pub fn truncate(s: &str, max: usize) -> String {

@@ -5,4 +5,5 @@
 //! * `co_<slug>`    â one database per company, provisioned at runtime by
 //!                     [`tenant::provision`], never by hand and never with a restart.
 
+pub mod schema;
 pub mod tenant;

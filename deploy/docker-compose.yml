@@ -1,0 +1,50 @@
+name: mythforge
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mythforge-postgres
+    environment:
+      POSTGRES_USER: forge
+      POSTGRES_PASSWORD: forge
+      POSTGRES_DB: forge
+    ports:
+      - "127.0.0.1:55440:5432"
+    volumes:
+      - mythforge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forge"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: mythforge-api
+    environment:
+      DATABASE_URL: postgres://forge:forge@postgres:5432/forge
+      ADMIN_DATABASE_URL: postgres://forge:forge@postgres:5432/postgres
+      PORT: "8080"
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-glm-5.3-flash}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me-please-0123456789}
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      RUST_LOG: info,sqlx=warn
+    ports:
+      - "127.0.0.1:8090:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  mythforge_pgdata:

@@ -45,6 +45,18 @@ impl From<argon2::password_hash::Error> for Error {
     }
 }
 
+impl From<reqwest::Error> for Error {
+    fn from(e: reqwest::Error) -> Self {
+        Error::Internal(format!("http error: {e}"))
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(e: serde_json::Error) -> Self {
+        Error::Internal(format!("json error: {e}"))
+    }
+}
+
 impl From<std::io::Error> for Error {
     fn from(e: std::io::Error) -> Self {
         Error::Internal(e.to_string())
