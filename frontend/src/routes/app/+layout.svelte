@@ -5,7 +5,7 @@
   import type { Blueprint, Module } from '$lib/api/types';
   import { Badge, Button } from '$lib/components/ui';
   import ChatPanel from '$lib/components/app/ChatPanel.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
 
   let { children } = $props();
@@ -28,11 +28,23 @@
 
   onMount(loadBlueprint);
   // the blueprint changes whenever the builder provisions a new module, so
-  // refresh it on every navigation to keep the sidebar in sync.
+  // refresh it on every navigation to keep the sidebar in sync. `untrack`
+  // keeps loadBlueprint's own reads from becoming dependencies, and a single
+  // in-flight guard prevents the duplicate first-load request.
+  let loadingBlueprint = false;
+  async function refreshBlueprint() {
+    if (loadingBlueprint) return;
+    loadingBlueprint = true;
+    try {
+      await loadBlueprint();
+    } finally {
+      loadingBlueprint = false;
+    }
+  }
   $effect(() => {
     void page.url.pathname;
     if (!$session) return;
-    void loadBlueprint();
+    untrack(() => void refreshBlueprint());
   });
 
   const modules = $derived(blueprint?.modules ?? []);

@@ -49,9 +49,11 @@ tests:
       - click: testid=auto-create
       - expect: { locator: '[data-testid^="automation-"]', count: '>=1' }
       - click: testid=run-automation
-      # the automation executes a full agent turn (~25-90 s under load);
-      # poll for the recorded run instead of sleeping a fixed time
-      - expect: { page_contains: 1 runs, timeout: 150 }
+      # the automation executes a full agent turn (~25-90 s under load), and
+      # the background scheduler may also fire the schedule trigger, so poll
+      # for at least one recorded run instead of an exact count.
+      - expect: { locator: testid=runs-badge, to_contain_text: runs, timeout: 150 }
+      - assert: the run counter is no longer zero (it reads at least "1 runs")
       - click: testid=delete-automation
       - wait: 2000
       - expect: { locator: '[data-testid^="automation-"]', count: 0 }

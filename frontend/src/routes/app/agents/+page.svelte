@@ -156,7 +156,7 @@
         <Separator />
         <div class="flex gap-2">
           <Input data-testid="agent-input-{a.slug}" aria-label="Message this agent" bind:value={chatInputs[a.slug]}
-            placeholder={chatInputs[a.slug] === undefined ? 'Message this agent' : 'Message this agent'} />
+            placeholder="Message this agent" />
           <Button size="sm" onclick={() => run(a.slug)} disabled={chatting !== null}
             data-testid="run-agent-{a.slug}">
             {#if chatting === a.slug}<Spinner size={12} />{/if}Run
