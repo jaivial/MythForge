@@ -14,7 +14,7 @@ tests:
       - open: /login
       - act: create a new workspace signing up with a unique email (use e2e-<random>@mythforge.test), password supersecret1, your name E2E Runner, company name E2E Smoke Co, keeping the CRM template
       - open: /app
-      - wait: 2
+      - wait: 1500
       - expect: { url_contains: /app }
       - expect: { locator: testid=sidebar, count: 1 }
 

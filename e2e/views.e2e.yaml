@@ -8,7 +8,7 @@ tests:
           sign up a fresh workspace (unique email e2e-views-<random>@mythforge.test, password
           supersecret1, name E2E Views, company E2E Views Co, CRM template)
       - open: /app
-      - wait: 2
+      - wait: 1500
       - open: /app/m/crm/lead
       - expect: { locator: testid=records-table, count: 1 }
       - act: create a lead named "Kanban Card" with stage New

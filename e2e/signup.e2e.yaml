@@ -8,7 +8,7 @@ tests:
           sign up a fresh workspace (unique email e2e-erp-<random>@mythforge.test, password
           supersecret1, name E2E ERP, company E2E ERP Co, ERP template)
       - open: /app
-      - wait: 2
+      - wait: 1500
       - expect: { locator: testid=sidebar, count: 1 }
       - assert: >
           the workspace lists the ERP starter modules inventory and sales with their
@@ -23,7 +23,7 @@ tests:
           sign up a fresh workspace (unique email e2e-blank-<random>@mythforge.test, password
           supersecret1, name E2E Blank, company E2E Blank Co, blank template)
       - open: /app
-      - wait: 2
+      - wait: 1500
       - expect: { locator: testid=sidebar, count: 1 }
       - expect: { locator: testid=goto-build, count: 1 }
       - assert: the workspace shows the empty state with a link to Build
@@ -60,4 +60,4 @@ tests:
       # and no error is needed because nothing was sent.
       - expect: { url_contains: /login }
       - expect: { locator: testid=login-form, count: 1 }
-      - assert: the password field rejects the 3 character value as invalid instead of sending it
+      - expect: { locator: testid=password-hint, count: 1 }

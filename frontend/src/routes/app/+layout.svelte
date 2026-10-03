@@ -17,13 +17,22 @@
     if (!$session) goto('/login');
   });
 
-  onMount(async () => {
+  async function loadBlueprint() {
     if (!$session) return;
     try {
       blueprint = await workspace.blueprint();
     } catch {
       blueprint = { modules: [] };
     }
+  }
+
+  onMount(loadBlueprint);
+  // the blueprint changes whenever the builder provisions a new module, so
+  // refresh it on every navigation to keep the sidebar in sync.
+  $effect(() => {
+    void page.url.pathname;
+    if (!$session) return;
+    void loadBlueprint();
   });
 
   const modules = $derived(blueprint?.modules ?? []);
@@ -61,10 +70,15 @@
             {#if open}Modules{/if}
           </div>
           {#each modules as m (m.slug)}
-            <a href="/app/m/{m.slug}/{m.entities[0]?.slug ?? ''}" data-testid="nav-module-{m.slug}"
+            <a
+              href="/app/m/{m.slug}/{m.entities[0]?.slug ?? ''}"
+              data-testid="nav-module-{m.slug}"
+              aria-label={m.name}
+              title={m.name}
               class="rounded-md px-3 py-2 text-sm {current.startsWith('/app/m/' + m.slug)
                 ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+            >
               {#if open}{m.name}{/if}
             </a>
           {/each}

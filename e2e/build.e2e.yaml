@@ -11,10 +11,12 @@ tests:
       - expect: { locator: testid=build-card, count: 1 }
       - act: >
           describe (in Spanish) "un modulo de inventario con productos que tienen nombre,
-          sku, precio y stock, y movimientos de inventario" and submit it to the builder
+          sku, precio y stock, y movimientos de inventario" and submit it to the builder,
+          then wait for the result card to appear; do not click anything on it and stay
+          on /app/build
       - expect: { locator: testid=build-result, count: 1 }
       - open: /app
-      - wait: 2
+      - wait: 2000
       - expect: { locator: testid=module-inventario, count: 1 }
       - assert: the sidebar now lists the generated inventario module
 
@@ -27,7 +29,9 @@ tests:
       - open: /app/build
       - act: >
           type the English prompt "an HR module with employees that have name, email,
-          department and salary, and departments that have name and budget" and submit it
+          department and salary, and departments that have name and budget" and submit it,
+          then wait for the result card to appear; do not click anything on it and stay
+          on /app/build
       - expect: { locator: testid=build-result, count: 1 }
       - assert: the result mentions both the employee and department entities
 
@@ -47,7 +51,8 @@ tests:
       - act: >
           sign up a fresh workspace (unique email e2e-link2-<random>@mythforge.test, password
           supersecret1, name E2E Link2, company E2E Link2 Co, blank template)
-      - wait: 2
+      - open: /app
+      - wait: 1500
       - expect: { locator: testid=goto-build, count: 1 }
       - expect: { page_contains: Build something }
 

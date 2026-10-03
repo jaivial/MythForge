@@ -10,8 +10,10 @@ tests:
       - act: create a mascot named "Forge Owl" with a helpful persona
       - expect: { locator: testid=mascot-forge_owl, count: 1 }
       - act: >
-          use the compose box to describe an agent "that summarizes my leads every morning"
-          and open the draft
+          type "an agent that summarizes my leads every morning" into the compose
+          box on /app/agents, click its submit button once, then wait until the
+          agent draft card appears below it. Do not click Create agent and do not
+          navigate away.
       - expect: { locator: testid=agent-draft, count: 1 }
       - click: testid=create-agent
       - expect: { locator: '[data-testid^="agent-input-"]', count: '>=1' }
@@ -47,10 +49,11 @@ tests:
       - click: testid=auto-create
       - expect: { locator: '[data-testid^="automation-"]', count: '>=1' }
       - click: testid=run-automation
-      - wait: 8
-      - assert: the automation shows at least one recorded run
+      # the automation executes a full agent turn (~25-90 s under load);
+      # poll for the recorded run instead of sleeping a fixed time
+      - expect: { page_contains: 1 runs, timeout: 150 }
       - click: testid=delete-automation
-      - wait: 2
+      - wait: 2000
       - expect: { locator: '[data-testid^="automation-"]', count: 0 }
 
   - name: settings shows google and automation states

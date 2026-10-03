@@ -78,10 +78,17 @@
     }
   }
 
+  let runningId = $state<string | null>(null);
+
   async function runAuto(id: string) {
-    await automations.runNow(id);
-    const as = await automations.list();
-    autos = as.items;
+    runningId = id;
+    try {
+      await automations.runNow(id);
+      const as = await automations.list();
+      autos = as.items;
+    } finally {
+      runningId = null;
+    }
   }
 
   async function removeAuto(id: string) {
@@ -200,8 +207,16 @@
             <span class="text-xs text-muted-foreground">{String(a.trigger?.kind ?? '')}</span>
           </div>
           <div class="flex items-center gap-2">
-            <Badge variant="outline">{a.run_count} runs</Badge>
-            <Button size="sm" variant="ghost" onclick={() => runAuto(a.id)} data-testid="run-automation">Run</Button>
+            <Badge variant="outline" data-testid="runs-badge">{a.run_count} runs</Badge>
+            <Button
+              size="sm"
+              variant="ghost"
+              onclick={() => runAuto(a.id)}
+              data-testid="run-automation"
+              disabled={runningId === a.id}
+            >
+              {runningId === a.id ? 'Running…' : 'Run'}
+            </Button>
             <Button size="sm" variant="ghost" onclick={() => removeAuto(a.id)} data-testid="delete-automation">Delete</Button>
           </div>
         </div>
