@@ -163,7 +163,8 @@
       <div class="flex rounded-md border border-border" data-testid="views">
         {#each views as v}
           <button type="button"
-            class="px-3 py-1.5 text-xs capitalize {view === v ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted'}"
+            aria-pressed={view === v}
+            class="min-h-8 px-3 py-1.5 text-xs capitalize coarse:min-h-11 coarse:px-4 {view === v ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted'}"
             onclick={() => (view = v)}>{v}</button>
         {/each}
       </div>

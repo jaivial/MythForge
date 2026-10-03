@@ -13,7 +13,10 @@
   let { children } = $props();
   let blueprint = $state<Blueprint | null>(null);
   let open = $state(false);
-  let showChat = $state(true);
+  // The assistant is a side panel from `md` up but a bottom sheet on phones,
+  // where opening it by default would cover the page: start it closed there.
+  const TABLET = 768;
+  let showChat = $state(typeof window === 'undefined' || window.innerWidth >= TABLET);
 
   $effect(() => {
     if (!$session) goto('/login');
@@ -92,7 +95,7 @@
     <aside
       class="{open ? 'w-60' : 'w-16'} shrink-0 flex-col border-r border-border bg-surface
              max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50
-             max-lg:{open ? 'translate-x-0' : '-translate-x-full'}
+             {open ? 'max-lg:translate-x-0' : 'max-lg:-translate-x-full'}
              max-lg:transition-transform max-lg:duration-200
              lg:flex lg:transition-[width] lg:duration-200"
       data-testid="sidebar"
@@ -105,13 +108,13 @@
 
       <nav class="flex flex-1 flex-col gap-1 p-2">
         <a href="/app/build" data-testid="nav-build"
-          class="rounded-md px-3 py-2 text-sm {current.startsWith('/app/build')
+          class="flex min-h-9 items-center rounded-md px-3 py-2 text-sm coarse:min-h-11 {current.startsWith('/app/build')
             ? 'bg-muted text-foreground'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
           Build
         </a>
         <a href="/app/agents" data-testid="nav-agents"
-          class="rounded-md px-3 py-2 text-sm {current.startsWith('/app/agents')
+          class="flex min-h-9 items-center rounded-md px-3 py-2 text-sm coarse:min-h-11 {current.startsWith('/app/agents')
             ? 'bg-muted text-foreground'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
           Agents
@@ -127,7 +130,7 @@
               data-testid="nav-module-{m.slug}"
               aria-label={m.name}
               title={m.name}
-              class="rounded-md px-3 py-2 text-sm {current.startsWith('/app/m/' + m.slug)
+              class="flex min-h-9 items-center rounded-md px-3 py-2 text-sm coarse:min-h-11 {current.startsWith('/app/m/' + m.slug)
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
             >
@@ -139,7 +142,7 @@
 
       <div class="border-t border-border p-2">
         <a href="/app/settings" data-testid="nav-settings"
-          class="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted">
+          class="flex min-h-9 items-center rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted coarse:min-h-11">
           Settings
         </a>
         <Button variant="ghost" size="sm" class="w-full justify-start" onclick={() => logout()}>
@@ -161,6 +164,7 @@
             aria-label={open ? 'Close navigation' : 'Open navigation'}
             aria-expanded={open}
             data-testid="toggle-sidebar"
+            class="coarse:min-w-11"
           >
             <svg aria-hidden="true" viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
               <path d="M3 6h18M3 12h18M3 18h18" />
