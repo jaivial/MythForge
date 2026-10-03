@@ -49,11 +49,12 @@ tests:
       - click: testid=auto-create
       - expect: { locator: '[data-testid^="automation-"]', count: '>=1' }
       - click: testid=run-automation
-      # the automation executes a full agent turn (~25-90 s under load), and
-      # the background scheduler may also fire the schedule trigger, so poll
-      # for at least one recorded run instead of an exact count.
-      - expect: { locator: testid=runs-badge, to_contain_text: runs, timeout: 150 }
-      - assert: the run counter is no longer zero (it reads at least "1 runs")
+      # The Run button awaits a full agent turn (~25-90 s under load) before the
+      # list refreshes, and the badge keeps showing the previous "0 runs" while
+      # the request is in flight. Poll for the incremented text itself - matching
+      # the bare word "runs" passes instantly on the stale badge and races the
+      # turn (the schedule is hourly, so exactly one run is recorded here).
+      - expect: { locator: testid=runs-badge, to_contain_text: "1 runs", timeout: 180 }
       - click: testid=delete-automation
       - wait: 2000
       - expect: { locator: '[data-testid^="automation-"]', count: 0 }
