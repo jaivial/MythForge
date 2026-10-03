@@ -1,4 +1,6 @@
 <script lang="ts">
+  // Tailwind v4 `lg` breakpoint — single source of truth for "desktop layout".
+  const DESKTOP = 1024;
   import { page } from '$app/state';
   import { session, logout } from '$lib/stores/session';
   import { workspace } from '$lib/api/endpoints';
@@ -55,7 +57,7 @@
   // testids and the nav expectations stay identical at every width.
   function closeDrawerOnNavigate() {
     void page.url.pathname;
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) open = false;
+    if (typeof window !== 'undefined' && window.innerWidth < DESKTOP) open = false;
   }
 
   $effect(() => {
@@ -64,7 +66,7 @@
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape' && open && typeof window !== 'undefined'
-        && window.innerWidth < 1024) {
+        && window.innerWidth < DESKTOP) {
       open = false;
     }
   }

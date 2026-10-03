@@ -43,7 +43,7 @@
   class={cn(
     'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-silver',
-    'active:scale-[0.97] transition-transform duration-100',
+    'enabled:active:scale-[0.97] transition-transform duration-100',
     'disabled:pointer-events-none disabled:opacity-50',
     variants[variant],
     sizes[size],
