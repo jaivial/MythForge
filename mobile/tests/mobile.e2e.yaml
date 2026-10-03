@@ -130,7 +130,7 @@ tests:
       - click: testid=kanban-col-Won
       - expect: { locator: 'css=[data-testid=kanban]', count: 1 }
       - screenshot: mobile-kanban
-      - assert: the Won column is on screen and shows the Lane Lead card
+      - assert: the kanban board has a Won column that contains the Lane Lead card
 
   - name: the builder is usable from a phone
     steps:
