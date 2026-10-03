@@ -84,11 +84,14 @@
 {#if $session}
   <div class="flex min-h-dvh">
     {#if open}
-      <!-- Mobile drawer backdrop: click (or Escape) dismisses it. -->
+      <!-- Mobile drawer backdrop: the dimmed strip right of the 240px (w-60) drawer.
+           Tap (or Escape) dismisses it. It starts at the drawer edge so its whole
+           box - not just a sliver behind the drawer - is the tap target. -->
       <button
         type="button"
         aria-label="Close navigation"
-        class="fixed inset-0 z-40 bg-black/60 lg:hidden"
+        data-testid="drawer-backdrop"
+        class="fixed inset-y-0 right-0 left-60 z-40 bg-black/60 lg:hidden"
         onclick={() => (open = false)}
       ></button>
     {/if}

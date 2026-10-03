@@ -186,21 +186,25 @@
     <span class="sr-only">Loading records</span>
   </Card>
 {:else if view === 'kanban' && groupField}
-  <div class="flex gap-4 overflow-x-auto pb-4" data-testid="kanban">
+  <!-- Columns scroll sideways inside the board (never the page); on touch each
+       column snaps into view so a swipe lands on a whole column. -->
+  <div class="scroll-contain flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 sm:snap-none"
+    data-testid="kanban" role="region" aria-label="{entity?.name ?? 'Records'} board" tabindex="-1">
     {#each columns as col}
-      <div class="w-64 shrink-0 rounded-lg border border-border bg-surface p-3">
+      <section class="w-[min(16rem,80vw)] shrink-0 snap-start rounded-lg border border-border bg-surface p-3"
+        data-testid="kanban-col-{col}" aria-label={col}>
         <div class="mb-3 flex items-center justify-between">
           <span class="text-sm font-medium">{col}</span>
           <Badge>{byColumn(col).length}</Badge>
         </div>
         <div class="flex flex-col gap-2">
           {#each byColumn(col) as r (r.id)}
-            <div class="rounded-md border border-border bg-surface-2 p-3 text-sm">
+            <div class="rounded-md border border-border bg-surface-2 p-3 text-sm" data-testid="kanban-card">
               {fmtValue(r.data[entity?.fields[0]?.slug ?? ''])}
             </div>
           {/each}
         </div>
-      </div>
+      </section>
     {/each}
   </div>
 {:else}

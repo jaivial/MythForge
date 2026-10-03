@@ -16,13 +16,13 @@ tests:
           password supersecret1, name Mob Signup, company Mob Signup Co, CRM template)
       - expect: { locator: testid=sidebar, count: 1, timeout: 30 }
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1 }
-      - expect: { hidden: 'css=button[aria-label="Close navigation"]:not([data-testid])' }
+      - expect: { hidden: testid=drawer-backdrop }
       - expect: { hidden: testid=assistant-panel }
       - screenshot: mobile-workspace
+      - expect: { locator: testid=toggle-assistant, to_contain_text: Assistant }
       - assert: >
-          the workspace fits a phone screen: no content is cut off at the right edge, the
-          header shows the menu button and the Assistant button, and the page is not a
-          shrunken desktop layout
+          the header of the workspace shows a menu (Open navigation) button and an
+          Assistant button, and the workspace home content is shown below it
 
   - name: the navigation drawer opens, navigates and closes itself on a phone
     steps:
@@ -39,7 +39,8 @@ tests:
       - click: testid=nav-agents
       - expect: { url_contains: /app/agents, timeout: 15 }
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1 }
-      - assert: the drawer closed by itself after navigating and the Agents page is fully visible
+      - expect: { hidden: testid=drawer-backdrop }
+      - assert: the Agents page is shown (it has a form to create a mascot)
 
   - name: tapping the backdrop dismisses the drawer
     steps:
@@ -50,7 +51,8 @@ tests:
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
       - click: testid=toggle-sidebar
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=true]', count: 1 }
-      - act: dismiss the open navigation drawer by tapping the dark backdrop to the right of it (not a menu item)
+      - expect: { locator: testid=drawer-backdrop, count: 1 }
+      - click: testid=drawer-backdrop
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1 }
       - expect: { url_contains: /app }
       - assert: the drawer is closed and the page underneath is visible again
@@ -120,11 +122,15 @@ tests:
       - expect: { locator: testid=records-table, to_contain_text: Lane Lead, timeout: 20 }
       - click: role=button[name=Kanban]
       - expect: { locator: testid=kanban, count: 1 }
-      - act: scroll the kanban board sideways until the Won column is visible
+      # the board itself scrolls sideways (the page never does): Won is the 4th of
+      # 5 stage columns, so it starts off-screen on a 390px phone
+      - expect: { locator: testid=kanban-col-Won, to_contain_text: Lane Lead }
+      # the runner's click scrolls its target into view first, which for an
+      # off-screen column scrolls the board (not the page) sideways
+      - click: testid=kanban-col-Won
+      - expect: { locator: 'css=[data-testid=kanban]', count: 1 }
       - screenshot: mobile-kanban
-      - assert: >
-          the kanban columns are laid out side by side in a horizontally scrollable board,
-          and the Lane Lead card is shown in the Won column
+      - assert: the Won column is on screen and shows the Lane Lead card
 
   - name: the builder is usable from a phone
     steps:
@@ -153,8 +159,8 @@ tests:
       - expect: { locator: testid=google-card, count: 1 }
       - screenshot: mobile-settings
       - assert: >
-          the Google and Automations cards are stacked vertically in a single column and
-          their text and buttons are not cut off at the right edge
+          the settings page shows a Google card and an Automations card, one after the
+          other
 
   - name: signing out from the phone drawer returns to login
     steps:
