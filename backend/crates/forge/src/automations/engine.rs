@@ -14,8 +14,10 @@ pub async fn due_automations(state: &SharedState) -> Result<Vec<Uuid>> {
         r#"SELECT id FROM automation
            WHERE is_active
              AND trigger->>'kind' = 'schedule'
-             AND (last_run_at IS NULL
-                  OR last_run_at < now() - make_interval(secs => LEAST(COALESCE((trigger->>'interval_seconds')::bigint, 3600), 86400)))
+             -- the first interval counts from creation: a brand-new schedule must
+             -- not fire the instant it is saved ("every day at 8am" ran on Create)
+             AND COALESCE(last_run_at, created_at)
+                 < now() - make_interval(secs => LEAST(COALESCE((trigger->>'interval_seconds')::bigint, 3600), 86400))
            FOR UPDATE SKIP LOCKED"#,
     )
     .fetch_all(&state.pool)

@@ -1,0 +1,11 @@
+# Mobile e2e pass: same app and models as the desktop suite, phone Chrome profile.
+#   MINITUI_CHROME=$PWD/mobile/chrome-mobile.sh mini-agent-rs e2e run -C mobile/e2e.yaml
+base_url: https://forge.myth.services
+tests: [tests]
+cache_dir: ../.e2e-cache-mobile
+output_dir: ../.e2e-runs
+models:
+  worker: zai/glm-5.3-flash
+  judge: zai/glm-5.3-flash
+auth:
+  default_profile: none

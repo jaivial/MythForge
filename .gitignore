@@ -1,12 +1,15 @@
 node_modules/
+# build output only - an unanchored `build/` also swallowed the
+# SvelteKit route src/routes/app/build/ (the Builder page)
+/frontend/build/
 dist/
-build/
 .svelte-kit/
 target/
 .env
 .env.local
 *.log
 .e2e-cache/
+.e2e-cache-mobile/
 .e2e-runs/
 .DS_Store
 coverage/

@@ -44,7 +44,7 @@
     </p>
   </div>
   <a href="/app/build" data-testid="goto-build"
-    class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-silver-dim">
+    class="inline-flex min-h-9 items-center rounded-md bg-primary px-4 py-2 text-sm font-medium coarse:min-h-11 text-primary-foreground hover:bg-silver-dim">
     Build something
   </a>
 </header>

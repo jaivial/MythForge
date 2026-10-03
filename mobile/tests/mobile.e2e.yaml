@@ -1,0 +1,192 @@
+# Mobile-viewport scenarios (390x844, touch, coarse pointer, no hover, iPhone UA).
+# Run with the phone Chrome wrapper - see mobile/README.md:
+#   MINITUI_CHROME=$PWD/mobile/chrome-mobile.sh mini-agent-rs e2e run mobile/tests
+# Every test first asserts a layout fact that is ONLY true below `md`: the
+# assistant panel starts hidden (on desktop it is open on load), so a run that
+# silently fell back to the 1280px desktop window fails fast.
+defaults:
+  timeout: 600
+
+tests:
+  - name: mobile signup lands on a phone-shaped workspace
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-signup-<random>@mythforge.test,
+          password supersecret1, name Mob Signup, company Mob Signup Co, CRM template)
+      - expect: { locator: testid=sidebar, count: 1, timeout: 30 }
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1 }
+      - expect: { hidden: testid=drawer-backdrop }
+      - expect: { hidden: testid=assistant-panel }
+      - screenshot: mobile-workspace
+      - expect: { locator: testid=toggle-assistant, to_contain_text: Assistant }
+      - assert: >
+          the header of the workspace shows a menu (Open navigation) button and an
+          Assistant button, and the workspace home content is shown below it
+
+  - name: the navigation drawer opens, navigates and closes itself on a phone
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-drawer-<random>@mythforge.test,
+          password supersecret1, name Mob Drawer, company Mob Drawer Co, CRM template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - click: testid=toggle-sidebar
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=true]', count: 1 }
+      - expect: { locator: testid=nav-module-crm, to_contain_text: CRM }
+      - screenshot: mobile-drawer-open
+      - assert: the navigation drawer is open over the page and shows Build, Agents, CRM and Settings with readable labels
+      - click: testid=nav-agents
+      - expect: { url_contains: /app/agents, timeout: 15 }
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1 }
+      - expect: { hidden: testid=drawer-backdrop }
+      - assert: the Agents page is shown (it has a form to create a mascot)
+
+  - name: tapping the backdrop dismisses the drawer
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-backdrop-<random>@mythforge.test,
+          password supersecret1, name Mob Backdrop, company Mob Backdrop Co, CRM template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - click: testid=toggle-sidebar
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=true]', count: 1 }
+      - expect: { locator: testid=drawer-backdrop, count: 1 }
+      - click: testid=drawer-backdrop
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1 }
+      - expect: { url_contains: /app }
+      - assert: the drawer is closed and the page underneath is visible again
+
+  - name: the assistant opens as a bottom sheet and answers on a phone
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-ask-<random>@mythforge.test,
+          password supersecret1, name Mob Ask, company Mob Ask Co, CRM template)
+      - expect: { hidden: testid=assistant-panel, timeout: 30 }
+      - click: testid=toggle-assistant
+      - expect: { locator: testid=assistant-panel, count: 1 }
+      - screenshot: mobile-assistant-sheet
+      - act: ask the assistant "what modules do I have?" and wait for the answer
+      - assert: the assistant answered in the bottom sheet and the answer mentions the CRM module
+      - click: testid=close-assistant
+      - expect: { hidden: testid=assistant-panel }
+
+  - name: a lead can be created and found on a phone
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-lead-<random>@mythforge.test,
+          password supersecret1, name Mob Lead, company Mob Lead Co, CRM template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - open: /app/m/crm/lead
+      - expect: { locator: testid=new-record, count: 1, timeout: 20 }
+      - click: testid=new-record
+      - expect: { locator: testid=record-form, count: 1 }
+      - screenshot: mobile-record-form
+      - act: >
+          fill the new lead form with name "Pocket Lead", email pocket@example.com, stage
+          Qualified and value 900, then save it
+      - expect: { hidden: testid=record-form, timeout: 20 }
+      - expect: { locator: testid=records-table, to_contain_text: Pocket Lead, timeout: 20 }
+      - act: search the leads for "Pocket"
+      - expect: { locator: testid=record-row, count: 1, timeout: 15 }
+      - assert: the search result row for Pocket Lead is readable on the phone screen
+
+  - name: the record form closes with its Cancel button on a phone
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-cancel-<random>@mythforge.test,
+          password supersecret1, name Mob Cancel, company Mob Cancel Co, CRM template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - open: /app/m/crm/contact
+      - expect: { locator: testid=new-record, count: 1, timeout: 20 }
+      - click: testid=new-record
+      - expect: { locator: testid=record-form, count: 1 }
+      - act: type "Draft Person" in the contact name field, then tap the form's Cancel button
+      - expect: { hidden: testid=record-form }
+      - expect: { locator: testid=empty-state, count: 1 }
+      - assert: the form closed without saving and the contacts list is still empty
+
+  - name: the kanban board scrolls sideways inside itself on a phone
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-kanban-<random>@mythforge.test,
+          password supersecret1, name Mob Kanban, company Mob Kanban Co, CRM template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - open: /app/m/crm/lead
+      - expect: { locator: testid=new-record, count: 1, timeout: 20 }
+      - act: create a lead named "Lane Lead" in stage Won and save it
+      - expect: { locator: testid=records-table, to_contain_text: Lane Lead, timeout: 20 }
+      - click: role=button[name=Kanban]
+      - expect: { locator: testid=kanban, count: 1 }
+      # the board itself scrolls sideways (the page never does): Won is the 4th of
+      # 5 stage columns, so it starts off-screen on a 390px phone
+      - expect: { locator: testid=kanban-col-Won, to_contain_text: Lane Lead }
+      # the runner's click scrolls its target into view first, which for an
+      # off-screen column scrolls the board (not the page) sideways
+      - click: testid=kanban-col-Won
+      - expect: { locator: 'css=[data-testid=kanban]', count: 1 }
+      - screenshot: mobile-kanban
+      - assert: the kanban board has a Won column that contains the Lane Lead card
+
+  - name: the builder is usable from a phone
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-build-<random>@mythforge.test,
+          password supersecret1, name Mob Build, company Mob Build Co, Blank template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - open: /app/build
+      - act: tap the first example prompt chip so it fills the prompt box
+      - expect: { locator: 'css=button[aria-pressed=true]', count: 1 }
+      - screenshot: mobile-build
+      - assert: >
+          the selected example is highlighted, the prompt box contains its text, and the
+          Build button is visible and enabled without horizontal scrolling
+
+  - name: settings cards stack in one column on a phone
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-settings-<random>@mythforge.test,
+          password supersecret1, name Mob Settings, company Mob Settings Co, CRM template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - open: /app/settings
+      - expect: { locator: testid=automations-card, count: 1, timeout: 20 }
+      - expect: { locator: testid=google-card, count: 1 }
+      - screenshot: mobile-settings
+      - assert: >
+          the settings page shows a Google card and an Automations card, one after the
+          other
+
+  - name: signing out from the phone drawer returns to login
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-mob-out-<random>@mythforge.test,
+          password supersecret1, name Mob Out, company Mob Out Co, CRM template)
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
+      - click: testid=toggle-sidebar
+      - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=true]', count: 1 }
+      - click: role=button[name=Sign out]
+      - expect: { url_contains: /login, timeout: 15 }
+      - assert: the login screen is shown again and fits the phone screen
