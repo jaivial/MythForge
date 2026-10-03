@@ -5,7 +5,7 @@
   import type { Blueprint, Module } from '$lib/api/types';
   import { Badge, Button } from '$lib/components/ui';
   import ChatPanel from '$lib/components/app/ChatPanel.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { goto } from '$app/navigation';
 
   let { children } = $props();
@@ -17,13 +17,34 @@
     if (!$session) goto('/login');
   });
 
-  onMount(async () => {
+  async function loadBlueprint() {
     if (!$session) return;
     try {
       blueprint = await workspace.blueprint();
     } catch {
       blueprint = { modules: [] };
     }
+  }
+
+  onMount(loadBlueprint);
+  // the blueprint changes whenever the builder provisions a new module, so
+  // refresh it on every navigation to keep the sidebar in sync. `untrack`
+  // keeps loadBlueprint's own reads from becoming dependencies, and a single
+  // in-flight guard prevents the duplicate first-load request.
+  let loadingBlueprint = false;
+  async function refreshBlueprint() {
+    if (loadingBlueprint) return;
+    loadingBlueprint = true;
+    try {
+      await loadBlueprint();
+    } finally {
+      loadingBlueprint = false;
+    }
+  }
+  $effect(() => {
+    void page.url.pathname;
+    if (!$session) return;
+    untrack(() => void refreshBlueprint());
   });
 
   const modules = $derived(blueprint?.modules ?? []);
@@ -61,10 +82,15 @@
             {#if open}Modules{/if}
           </div>
           {#each modules as m (m.slug)}
-            <a href="/app/m/{m.slug}/{m.entities[0]?.slug ?? ''}" data-testid="nav-module-{m.slug}"
+            <a
+              href="/app/m/{m.slug}/{m.entities[0]?.slug ?? ''}"
+              data-testid="nav-module-{m.slug}"
+              aria-label={m.name}
+              title={m.name}
               class="rounded-md px-3 py-2 text-sm {current.startsWith('/app/m/' + m.slug)
                 ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+            >
               {#if open}{m.name}{/if}
             </a>
           {/each}

@@ -78,10 +78,17 @@
     }
   }
 
+  let runningId = $state<string | null>(null);
+
   async function runAuto(id: string) {
-    await automations.runNow(id);
-    const as = await automations.list();
-    autos = as.items;
+    runningId = id;
+    try {
+      await automations.runNow(id);
+      const as = await automations.list();
+      autos = as.items;
+    } finally {
+      runningId = null;
+    }
   }
 
   async function removeAuto(id: string) {
@@ -159,7 +166,7 @@
       <h2 class="font-medium">Automations</h2>
       <Separator />
       <div class="flex gap-2">
-        <Input data-testid="auto-prompt" bind:value={autoPrompt}
+        <Input data-testid="auto-prompt" aria-label="Describe the automation" bind:value={autoPrompt}
           placeholder="e.g. cada hora revisa stock bajo y avisame" />
         <Button size="sm" onclick={composeAuto} disabled={autoBusy || !autoPrompt.trim()}
           data-testid="auto-compose">{autoBusy ? '...' : 'Draft'}</Button>
@@ -200,9 +207,17 @@
             <span class="text-xs text-muted-foreground">{String(a.trigger?.kind ?? '')}</span>
           </div>
           <div class="flex items-center gap-2">
-            <Badge variant="outline">{a.run_count} runs</Badge>
-            <Button size="sm" variant="ghost" onclick={() => runAuto(a.id)}>Run</Button>
-            <Button size="sm" variant="ghost" onclick={() => removeAuto(a.id)}>Delete</Button>
+            <Badge variant="outline" data-testid="runs-badge">{a.run_count} runs</Badge>
+            <Button
+              size="sm"
+              variant="ghost"
+              onclick={() => runAuto(a.id)}
+              data-testid="run-automation"
+              disabled={runningId === a.id}
+            >
+              {runningId === a.id ? 'Running…' : 'Run'}
+            </Button>
+            <Button size="sm" variant="ghost" onclick={() => removeAuto(a.id)} data-testid="delete-automation">Delete</Button>
           </div>
         </div>
       {:else}

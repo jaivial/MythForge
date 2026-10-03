@@ -1,27 +1,93 @@
+# Mascots, agent compose, agent chat with tools, automation lifecycle.
 defaults: { profile: none, timeout: 900 }
 tests:
   - name: mascots and agents can be composed from a prompt
     steps:
       - open: /login
       - act: >
-          sign up a fresh workspace (unique email e2e-agents-<random>@mythforge.test, password
-          supersecret1, name E2E Agents, company E2E Agents Co, CRM template)
-      - act: go to the Agents page and create a mascot named "Forge Owl" with any persona
+          sign up a fresh workspace (unique email e2e-agents-<random>@mythforge.test,
+          password supersecret1, name E2E Agents, company E2E Agents Co, CRM template)
+      - act: create a mascot named "Forge Owl" with a helpful persona
       - expect: { locator: testid=mascot-forge_owl, count: 1 }
       - act: >
-          in the compose box ask for an agent that "counts open leads and summarises their value",
-          draft it, then create the agent
-      # the compose box clears and the created agent gets its own chat input
+          type "an agent that summarizes my leads every morning" into the compose
+          box on /app/agents, click its submit button once, then wait until the
+          agent draft card appears below it. Do not click Create agent and do not
+          navigate away.
+      - expect: { locator: testid=agent-draft, count: 1, timeout: 90 }
+      - click: testid=create-agent
       - expect: { locator: '[data-testid^="agent-input-"]', count: '>=1' }
+
+  - name: an agent answers using its tools over real company data
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-tool-<random>@mythforge.test, password
+          supersecret1, name E2E Tool, company E2E Tool Co, CRM template)
+      - act: create a mascot named "Data Owl" with an analyst persona
+      - act: >
+          compose an agent described as "counts my records and reports module counts"
+          and create it from the draft
+      - expect: { locator: '[data-testid^="agent-input-"]', count: '>=1' }
+      - act: >
+          ask the agent "how many leads do I have?" from its chat input and wait for the
+          answer
+      - assert: the answer mentions a number of leads
+
+  - name: an automation can be drafted, created, run and deleted
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-auto-<random>@mythforge.test, password
+          supersecret1, name E2E Auto, company E2E Auto Co, CRM template)
+      - open: /app/settings
+      - expect: { locator: testid=automations-card, count: 1 }
+      - act: >
+          draft an automation from the prompt "every day at 8am summarize new leads in a
+          report" but do NOT click Create yet
+      - expect: { locator: testid=auto-draft, count: 1, timeout: 90 }
+      - click: testid=auto-create
+      - expect: { locator: '[data-testid^="automation-"]', count: '>=1' }
+      - click: testid=run-automation
+      # the automation executes a full agent turn (~25-90 s under load), and
+      # the background scheduler may also fire the schedule trigger, so poll
+      # for at least one recorded run instead of an exact count.
+      - expect: { locator: testid=runs-badge, to_contain_text: runs, timeout: 150 }
+      - assert: the run counter is no longer zero (it reads at least "1 runs")
+      - click: testid=delete-automation
+      - wait: 2000
+      - expect: { locator: '[data-testid^="automation-"]', count: 0 }
 
   - name: settings shows google and automation states
     steps:
       - open: /login
       - act: >
-          sign up a fresh workspace (unique email e2e-settings-<random>@mythforge.test, password
-          supersecret1, name E2E Settings, company E2E Settings Co, CRM template)
-      - act: open the Settings page
+          sign up a fresh workspace (unique email e2e-set-<random>@mythforge.test, password
+          supersecret1, name E2E Set, company E2E Set Co, CRM template)
+      - open: /app/settings
       - expect: { locator: testid=google-card, count: 1 }
       - expect: { locator: testid=automations-card, count: 1 }
-      - assert: the google card states the integration is not connected
-      - assert: the automations card says there are no automations yet
+      - expect: { locator: testid=blueprint-card, count: 1 }
+
+  - name: the google card reports the server integration state
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-ggl-<random>@mythforge.test, password
+          supersecret1, name E2E Ggl, company E2E Ggl Co, CRM template)
+      - open: /app/settings
+      - expect: { locator: testid=google-card, count: 1 }
+      - expect: { locator: testid=google-connected, count: 0 }
+      - assert: >
+          the google card states the integration is not connected and, when the server has
+          no Google credentials, says so plainly instead of offering a broken connect button
+
+  - name: an empty compose prompt cannot be submitted
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-compose-<random>@mythforge.test,
+          password supersecret1, name E2E Comp, company E2E Comp Co, CRM template)
+      - open: /app/agents
+      - expect: { locator: testid=compose-card, count: 1 }
+      - assert: the Draft button stays disabled while the compose prompt is empty

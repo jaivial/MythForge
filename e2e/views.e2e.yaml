@@ -1,0 +1,57 @@
+# View switcher, kanban and search behaviours inside a generated module.
+defaults: { profile: none, timeout: 900 }
+tests:
+  - name: table and kanban views render for a generated entity
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-views-<random>@mythforge.test, password
+          supersecret1, name E2E Views, company E2E Views Co, CRM template)
+      - open: /app
+      - wait: 1500
+      - open: /app/m/crm/lead
+      - expect: { locator: testid=records-table, count: 1 }
+      - act: create a lead named "Kanban Card" with stage New
+      - act: switch to the Kanban view
+      - expect: { locator: testid=kanban, count: 1 }
+      - assert: the kanban shows the "Kanban Card" lead in its column
+
+  - name: search filters the record list and can be cleared back to all
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-srch-<random>@mythforge.test, password
+          supersecret1, name E2E Search, company E2E Search Co, CRM template)
+      - open: /app/m/crm/lead
+      - act: create a lead named "Alpha Lead" with stage New
+      - act: create a lead named "Beta Lead" with stage New
+      - act: type "Alpha" into the search box and wait for the list to refresh
+      - assert: only the Alpha Lead row is visible and the Beta Lead row is gone
+      - act: clear the search box
+      - assert: both leads are visible again
+
+  - name: a record can be deleted from the table and disappears
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-del-<random>@mythforge.test, password
+          supersecret1, name E2E Del, company E2E Del Co, CRM template)
+      - open: /app/m/crm/lead
+      - act: create a lead named "Doomed Lead" with stage New
+      - click: testid=delete-record
+      - expect: { locator: testid=confirm-delete, count: 1 }
+      - click: testid=confirm-delete-yes
+      - expect: { locator: testid=confirm-delete, count: 0 }
+      - assert: the Doomed Lead row is gone and the empty state is back
+
+  - name: an empty entity shows the empty state with a call to action
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-empty-<random>@mythforge.test, password
+          supersecret1, name E2E Empty, company E2E Empty Co, CRM template)
+      - open: /app/m/crm/lead
+      - expect: { locator: testid=records-table, count: 1 }
+      - expect: { locator: testid=empty-state, count: 1 }
+      - click: testid=empty-new-record
+      - expect: { locator: testid=record-form, count: 1 }

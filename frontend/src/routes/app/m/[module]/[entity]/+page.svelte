@@ -26,7 +26,13 @@
     try {
       const bp = await workspace.blueprint();
       const m = bp.modules.find((x) => x.slug === module);
-      const e = m?.entities.find((x) => x.slug === entitySlug) ?? m?.entities[0];
+      if (!m) {
+        error = 'Module not found';
+        return;
+      }
+      // An unknown entity slug must be reported, never silently replaced by the
+      // module's first entity (that hid broken deep links).
+      const e = m.entities.find((x) => x.slug === entitySlug);
       if (!e) {
         error = 'Entity not found';
         return;
@@ -91,8 +97,19 @@
     }
   }
 
+  // Delete confirmation lives in the UI (not window.confirm, which blocks the
+  // page and is invisible to accessibility snapshots).
+  let pendingDelete = $state<string | null>(null);
+
   async function remove(id: string) {
-    if (!entity || !confirm('Delete this record?')) return;
+    if (!entity) return;
+    pendingDelete = id;
+  }
+
+  async function confirmDelete() {
+    if (!entity || !pendingDelete) return;
+    const id = pendingDelete;
+    pendingDelete = null;
     await data.remove(module, entity.slug, id);
     await load();
   }
@@ -153,7 +170,7 @@
 {:else}
   <Card data-testid="records-table">
     <div class="flex items-center gap-2 border-b border-border p-3">
-      <Input data-testid="search" bind:value={search} placeholder="Search..."
+      <Input data-testid="search" aria-label="Search records" bind:value={search} placeholder="Search..."
         oninput={onSearch} class="max-w-xs" />
     </div>
     <div class="overflow-x-auto">
@@ -177,7 +194,7 @@
                 </td>
               {/each}
               <td class="px-3 py-2 text-right">
-                <Button variant="ghost" size="sm" onclick={() => remove(r.id)}>Delete</Button>
+                <Button variant="ghost" size="sm" onclick={() => remove(r.id)} data-testid="delete-record">Delete</Button>
               </td>
             </tr>
           {/each}
@@ -185,9 +202,29 @@
       </table>
     </div>
     {#if records.length === 0}
-      <p class="p-6 text-center text-sm text-muted-foreground">No records yet.</p>
+      <div class="flex flex-col items-center gap-3 p-8 text-center" data-testid="empty-state">
+        <p class="text-sm text-muted-foreground">
+          No records yet. Create the first {entity.name.toLowerCase()} with the New button.
+        </p>
+        <Button size="sm" onclick={openCreate} data-testid="empty-new-record">New {entity.name}</Button>
+      </div>
     {/if}
   </Card>
+{/if}
+
+{#if pendingDelete}
+  <div
+    class="fixed inset-x-0 bottom-6 z-50 mx-auto flex w-fit items-center gap-3 rounded-md border border-border bg-surface px-4 py-3 shadow-lg"
+    role="alertdialog"
+    aria-label="Confirm delete"
+    data-testid="confirm-delete"
+  >
+    <span class="text-sm">Delete this record?</span>
+    <Button size="sm" onclick={confirmDelete} data-testid="confirm-delete-yes">Delete</Button>
+    <Button size="sm" variant="ghost" onclick={() => (pendingDelete = null)}
+      data-testid="confirm-delete-no">Cancel</Button
+    >
+  </div>
 {/if}
 
 {#if formOpen && entity}

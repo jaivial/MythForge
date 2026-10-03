@@ -1,3 +1,4 @@
+# The AI builder: prompts in several languages, invalid input, navigation after a build.
 defaults: { profile: none, timeout: 900 }
 tests:
   - name: prompting the builder creates a new module at runtime
@@ -5,22 +6,75 @@ tests:
       - open: /login
       - act: >
           sign up a fresh workspace (unique email e2e-build-<random>@mythforge.test, password
-          supersecret1, name E2E Builder, company E2E Build Co, CRM template)
+          supersecret1, name E2E Build, company E2E Build Co, blank template)
       - open: /app/build
       - expect: { locator: testid=build-card, count: 1 }
       - act: >
-          in the build prompt box describe (in Spanish) "un modulo de inventario con productos:
-          sku, nombre, stock y coste" and click the build button, then wait for the result
-      - expect: { locator: testid=build-result, count: 1 }
-      - assert: the result mentions the new inventory module
+          describe (in Spanish) "un modulo de inventario con productos que tienen nombre,
+          sku, precio y stock, y movimientos de inventario" and submit it to the builder,
+          then wait for the result card to appear; do not click anything on it and stay
+          on /app/build
+      - expect: { locator: testid=build-result, count: 1, timeout: 120 }
       - open: /app
-      - assert: the workspace list shows an inventory module card
+      - wait: 2000
+      - expect: { locator: testid=module-inventario, count: 1 }
+      - assert: the sidebar now lists the generated inventario module
+
+  - name: an English prompt builds an HR module with two entities
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-hr-<random>@mythforge.test, password
+          supersecret1, name E2E HR, company E2E HR Co, blank template)
+      - open: /app/build
+      - act: >
+          type the English prompt "an HR module with employees that have name, email,
+          department and salary, and departments that have name and budget" and submit it,
+          then wait for the result card to appear; do not click anything on it and stay
+          on /app/build
+      - expect: { locator: testid=build-result, count: 1, timeout: 120 }
+      - assert: the result mentions both the employee and department entities
+
+  - name: an empty prompt cannot be submitted
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-empty-build-<random>@mythforge.test,
+          password supersecret1, name E2E EB, company E2E EB Co, blank template)
+      - open: /app/build
+      - expect: { locator: testid=build-submit, hidden: false, timeout: 10 }
+      - assert: the build button stays disabled while the prompt is empty
+
+  - name: the workspace links to the builder for an empty workspace
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-link2-<random>@mythforge.test, password
+          supersecret1, name E2E Link2, company E2E Link2 Co, blank template)
+      - open: /app
+      - wait: 1500
+      - expect: { locator: testid=goto-build, count: 1 }
+      - expect: { page_contains: Build something }
+
+  - name: the build result links back to the workspace
+    steps:
+      - open: /login
+      - act: >
+          sign up a fresh workspace (unique email e2e-link-<random>@mythforge.test, password
+          supersecret1, name E2E Link, company E2E Link Co, blank template)
+      - open: /app/build
+      - act: >
+          build the module described by the Spanish prompt "un modulo de soporte con
+          tickets que tienen titulo, estado y prioridad" and wait for the result card to
+          appear; do not click anything on it and stay on /app/build
+      - expect: { locator: testid=build-result, count: 1, timeout: 120 }
+      - expect: { locator: testid=goto-workspace, count: 1, timeout: 120 }
 
   - name: the assistant panel answers questions about company data
     steps:
       - open: /login
       - act: >
-          sign up a fresh workspace (unique email e2e-chat-<random>@mythforge.test, password
-          supersecret1, name E2E Chat, company E2E Chat Co, CRM template)
-      - act: open the assistant panel and ask "how many leads do I have?"
-      - assert: the assistant replies with an answer about leads
+          sign up a fresh workspace (unique email e2e-ask-<random>@mythforge.test, password
+          supersecret1, name E2E Ask, company E2E Ask Co, CRM template)
+      - act: ask the assistant "what modules do I have?"
+      - assert: the answer mentions the CRM module

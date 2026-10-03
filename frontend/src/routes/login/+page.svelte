@@ -94,6 +94,11 @@
           <span class="text-muted-foreground">Password</span>
           <Input data-testid="password" type="password" bind:value={password}
             placeholder="at least 8 characters" required minlength={8} />
+          {#if password.length > 0 && password.length < 8}
+            <span data-testid="password-hint" class="text-xs text-danger"
+              >Password must be at least 8 characters.</span
+            >
+          {/if}
         </label>
 
         {#if error}
