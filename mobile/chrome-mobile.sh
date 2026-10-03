@@ -5,6 +5,14 @@
 # (headless Chrome refuses windows narrower than 500px, so a flag alone is not enough).
 HERE="$(cd "$(dirname "$0")" && pwd)"
 CHROME="${MOBILE_CHROME_BIN:-$(ls -d "$HOME"/.agent-browser/browsers/chrome-*/chrome 2>/dev/null | tail -1)}"
+if [ -z "$CHROME" ] || [ ! -x "$CHROME" ]; then
+  echo "chrome-mobile.sh: no Chrome found (set MOBILE_CHROME_BIN)" >&2
+  exit 127
+fi
+python3 -c 'import websocket' 2>/dev/null || {
+  echo "chrome-mobile.sh: python3 websocket-client missing (pip install websocket-client); refusing to run at desktop size" >&2
+  exit 127
+}
 PROFILE=""
 for a in "$@"; do case "$a" in --user-data-dir=*) PROFILE="${a#--user-data-dir=}";; esac; done
 [ -n "$PROFILE" ] && python3 "$HERE/phone-sidecar.py" "$PROFILE" >/dev/null 2>&1 &

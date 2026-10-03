@@ -1,9 +1,9 @@
 # Mobile-viewport scenarios (390x844, touch, coarse pointer, no hover, iPhone UA).
 # Run with the phone Chrome wrapper - see mobile/README.md:
 #   MINITUI_CHROME=$PWD/mobile/chrome-mobile.sh mini-agent-rs e2e run mobile/tests
-# Every test first asserts a layout fact that is ONLY true on a phone (the
-# sidebar drawer is closed off-canvas and the toggle reports aria-expanded=false
-# with no backdrop), so a run that silently fell back to desktop fails fast.
+# Every test first asserts a layout fact that is ONLY true below `md`: the
+# assistant panel starts hidden (on desktop it is open on load), so a run that
+# silently fell back to the 1280px desktop window fails fast.
 defaults:
   timeout: 600
 
@@ -31,6 +31,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-drawer-<random>@mythforge.test,
           password supersecret1, name Mob Drawer, company Mob Drawer Co, CRM template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - click: testid=toggle-sidebar
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=true]', count: 1 }
       - expect: { locator: testid=nav-module-crm, to_contain_text: CRM }
@@ -49,6 +51,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-backdrop-<random>@mythforge.test,
           password supersecret1, name Mob Backdrop, company Mob Backdrop Co, CRM template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - click: testid=toggle-sidebar
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=true]', count: 1 }
       - expect: { locator: testid=drawer-backdrop, count: 1 }
@@ -79,6 +83,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-lead-<random>@mythforge.test,
           password supersecret1, name Mob Lead, company Mob Lead Co, CRM template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - open: /app/m/crm/lead
       - expect: { locator: testid=new-record, count: 1, timeout: 20 }
       - click: testid=new-record
@@ -100,6 +106,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-cancel-<random>@mythforge.test,
           password supersecret1, name Mob Cancel, company Mob Cancel Co, CRM template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - open: /app/m/crm/contact
       - expect: { locator: testid=new-record, count: 1, timeout: 20 }
       - click: testid=new-record
@@ -116,6 +124,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-kanban-<random>@mythforge.test,
           password supersecret1, name Mob Kanban, company Mob Kanban Co, CRM template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - open: /app/m/crm/lead
       - expect: { locator: testid=new-record, count: 1, timeout: 20 }
       - act: create a lead named "Lane Lead" in stage Won and save it
@@ -139,6 +149,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-build-<random>@mythforge.test,
           password supersecret1, name Mob Build, company Mob Build Co, Blank template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - open: /app/build
       - act: tap the first example prompt chip so it fills the prompt box
       - expect: { locator: 'css=button[aria-pressed=true]', count: 1 }
@@ -154,6 +166,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-settings-<random>@mythforge.test,
           password supersecret1, name Mob Settings, company Mob Settings Co, CRM template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - open: /app/settings
       - expect: { locator: testid=automations-card, count: 1, timeout: 20 }
       - expect: { locator: testid=google-card, count: 1 }
@@ -169,6 +183,8 @@ tests:
           sign up a fresh workspace (unique email e2e-mob-out-<random>@mythforge.test,
           password supersecret1, name Mob Out, company Mob Out Co, CRM template)
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=false]', count: 1, timeout: 30 }
+      # phone-only fact: below md the assistant sheet starts closed (on desktop it is open)
+      - expect: { hidden: testid=assistant-panel }
       - click: testid=toggle-sidebar
       - expect: { locator: 'css=[data-testid=toggle-sidebar][aria-expanded=true]', count: 1 }
       - click: role=button[name=Sign out]
