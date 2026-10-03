@@ -27,9 +27,11 @@
     danger: 'bg-danger/90 text-white hover:bg-danger'
   };
   const sizes: Record<string, string> = {
-    sm: 'h-8 px-3 text-xs',
-    md: 'h-9 px-4 text-sm',
-    icon: 'size-9 p-0'
+    // 32/36px on pointer-precise devices; 44px on touch where the WCAG
+    // target minimum applies.
+    sm: 'min-h-8 px-3 text-xs coarse:min-h-11',
+    md: 'min-h-9 px-4 text-sm coarse:min-h-11',
+    icon: 'size-9 p-0 coarse:size-11'
   };
 </script>
 
@@ -41,6 +43,7 @@
   class={cn(
     'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-silver',
+    'enabled:active:scale-[0.97] transition-transform duration-100',
     'disabled:pointer-events-none disabled:opacity-50',
     variants[variant],
     sizes[size],

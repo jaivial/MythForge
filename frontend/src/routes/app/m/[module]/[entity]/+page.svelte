@@ -65,6 +65,9 @@
     load();
   });
 
+  let formDialog = $state<HTMLDivElement | null>(null);
+  let lastFocused = $state<HTMLElement | null>(null);
+
   function openCreate() {
     // Pre-seed every field so `bind:value` never binds to undefined
     // (Svelte rejects undefined props and aborts the render).
@@ -72,7 +75,23 @@
     for (const f of entity?.fields ?? []) seed[f.slug] = '';
     form = seed;
     formError = '';
+    lastFocused = document.activeElement as HTMLElement | null;
     formOpen = true;
+    // Move focus into the dialog once it renders (keyboard + screen reader).
+    $effect(() => {
+      if (!formDialog) return;
+      const first = formDialog.querySelector<HTMLElement>(
+        'input, select, textarea, button'
+      );
+      first?.focus();
+    });
+  }
+
+  function closeForm() {
+    formOpen = false;
+    // Return focus to where the user came from.
+    lastFocused?.focus?.();
+    lastFocused = null;
   }
 
   async function save() {
@@ -126,6 +145,14 @@
   }
 </script>
 
+<svelte:window
+  onkeydown={(e) => {
+    if (e.key !== 'Escape') return;
+    if (formOpen) { formOpen = false; }
+    else if (pendingDelete) { pendingDelete = null; }
+  }}
+/>
+
 <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
   <div>
     <h1 class="text-xl font-semibold capitalize">{entity?.name ?? module}</h1>
@@ -148,7 +175,15 @@
 {#if error}
   <p data-testid="entity-error" class="text-sm text-danger">{error}</p>
 {:else if loading}
-  <div class="flex items-center gap-2 text-sm text-muted-foreground"><Spinner size={14} /> Loadingâ¦</div>
+  <!-- Skeleton rows: reserved height so the table never shifts under the user. -->
+  <Card data-testid="records-loading">
+    <div class="flex flex-col gap-2 p-3" aria-hidden="true">
+      {#each Array.from({ length: 5 }) as _, i (i)}
+        <div class="h-8 animate-pulse rounded-md bg-muted/60"></div>
+      {/each}
+    </div>
+    <span class="sr-only">Loading records</span>
+  </Card>
 {:else if view === 'kanban' && groupField}
   <div class="flex gap-4 overflow-x-auto pb-4" data-testid="kanban">
     {#each columns as col}
@@ -204,9 +239,9 @@
     {#if records.length === 0}
       <div class="flex flex-col items-center gap-3 p-8 text-center" data-testid="empty-state">
         <p class="text-sm text-muted-foreground">
-          No records yet. Create the first {entity.name.toLowerCase()} with the New button.
+          No records yet. Create the first {(entity?.name ?? 'record').toLowerCase()} with the New button.
         </p>
-        <Button size="sm" onclick={openCreate} data-testid="empty-new-record">New {entity.name}</Button>
+        <Button size="sm" onclick={openCreate} data-testid="empty-new-record">New {entity?.name ?? 'record'}</Button>
       </div>
     {/if}
   </Card>
@@ -229,16 +264,19 @@
 
 {#if formOpen && entity}
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-    role="dialog" aria-modal="true" data-testid="record-form">
-    <Card class="w-full max-w-lg p-6">
+    role="dialog" aria-modal="true" aria-label="New {entity.name}" data-testid="record-form"
+    bind:this={formDialog}>
+    <Card class="scroll-contain max-h-[85dvh] w-full max-w-lg overflow-y-auto p-6">
       <h2 class="mb-4 text-lg font-semibold">New {entity.name}</h2>
       <form onsubmit={(e) => { e.preventDefault(); save(); }} class="flex flex-col gap-4">
         {#each entity.fields as f (f.slug)}
           <label class="flex flex-col gap-1 text-sm">
             <span class="text-muted-foreground">{f.name}{#if f.required} *{/if}</span>
             {#if f.type === 'select'}
-              <select bind:value={form[f.slug]} required={f.required}
-                class="h-9 rounded-md border border-border bg-surface-2 px-3 text-sm">
+              <select bind:value={form[f.slug]} required={f.required} aria-label={f.name}
+                class="min-h-9 w-full rounded-md border border-border bg-surface-2 px-3 text-base
+                       focus-visible:outline-none focus-visible:border-silver
+                       focus-visible:ring-2 focus-visible:ring-silver/30 coarse:min-h-11">
                 <option value=""></option>
                 {#each f.choices ?? [] as c}<option value={c}>{c}</option>{/each}
               </select>
@@ -252,7 +290,7 @@
         {/each}
         {#if formError}<p class="text-sm text-danger" data-testid="form-error">{formError}</p>{/if}
         <div class="flex justify-end gap-2">
-          <Button variant="ghost" onclick={() => (formOpen = false)}>Cancel</Button>
+          <Button variant="ghost" onclick={() => closeForm()}>Cancel</Button>
           <Button type="submit" disabled={saving} data-testid="save-record">
             {#if saving}<Spinner size={14} />{/if} Save
           </Button>

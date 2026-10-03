@@ -44,7 +44,7 @@
   }
 </script>
 
-<main class="flex min-h-screen items-center justify-center p-6">
+<main class="app-safe-top app-safe-bottom flex min-h-dvh items-center justify-center p-6">
   <div class="flex w-full max-w-md flex-col gap-6">
     <header class="flex flex-col gap-1">
       <div class="flex items-center gap-3">
