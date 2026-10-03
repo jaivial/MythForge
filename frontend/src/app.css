@@ -1,6 +1,9 @@
 /* MythForge theme: dark 90% / white 70% / gray-silver 85% palette. */
 @import 'tailwindcss';
 
+/* Pointer-capability variant: `coarse:` = touch-primary devices. */
+@custom-variant coarse (@media (pointer: coarse));
+
 @theme {
   /* Base surfaces - dark-first */
   --color-background: #0b0d10;
@@ -24,6 +27,15 @@
 }
 
 html, body { height: 100%; }
+html {
+  /* platform layer: no gray/blue tap flash, no pull-to-refresh hijack,
+     no font inflation in landscape */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior: none;
+  /* keep keyboard-focused controls out from under the sticky header */
+  scroll-padding-bottom: 5rem;
+}
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
@@ -31,6 +43,45 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 * { border-color: var(--color-border); }
+
+/* Controls: text is a control, not content -> not selectable; immediate
+   clicks (no 300 ms double-tap wait). Feedback comes from :active. */
+button, a, [role='button'], [role='tab'], [role='switch'], summary, label {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* iOS Safari zooms the page when an input renders below 16px; keep the
+   minimum on the only pointer class that can trigger it. */
+@media (pointer: coarse) {
+  input, textarea, select { font-size: 16px; }
+}
+
+/* Press feedback that works on every input type (touch has no hover). */
+button:active:not(:disabled), a:active, [role='button']:active {
+  transition: transform 120ms ease-out, background-color 120ms ease-out;
+  transform: scale(0.97);
+}
+
+/* Respect reduced motion: kill our own transitions and animations. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Notch / home indicator: page paints edge to edge, content is padded in
+   the shell (see the app layout's safe-area classes). */
+.app-safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.app-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Scroll containers stop scroll chaining at their own edge. */
+.scroll-contain { overscroll-behavior: contain; }
 
 /* shadcn-style utility layers, applied via classes in components */
 @utility card {

@@ -8,6 +8,6 @@
   });
 </script>
 
-<div class="flex min-h-screen items-center justify-center">
+<div class="flex min-h-dvh items-center justify-center">
   <div class="text-sm text-muted-foreground">MythForge</div>
 </div>

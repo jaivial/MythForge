@@ -49,16 +49,54 @@
 
   const modules = $derived(blueprint?.modules ?? []);
   const current = $derived(page.url.pathname);
+
+  // Responsive shell: on >=lg the sidebar is a permanent rail; below that it
+  // is an overlay drawer with a backdrop. `open` drives both, so the e2e
+  // testids and the nav expectations stay identical at every width.
+  function closeDrawerOnNavigate() {
+    void page.url.pathname;
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) open = false;
+  }
+
+  $effect(() => {
+    closeDrawerOnNavigate();
+  });
+
+  function onKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && open && typeof window !== 'undefined'
+        && window.innerWidth < 1024) {
+      open = false;
+    }
+  }
+
+  $effect(() => {
+    if (typeof window === 'undefined') return;
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
 </script>
 
 {#if $session}
-  <div class="flex min-h-screen">
+  <div class="flex min-h-dvh">
+    {#if open}
+      <!-- Mobile drawer backdrop: click (or Escape) dismisses it. -->
+      <button
+        type="button"
+        aria-label="Close navigation"
+        class="fixed inset-0 z-40 bg-black/60 lg:hidden"
+        onclick={() => (open = false)}
+      ></button>
+    {/if}
     <aside
-      class="{open ? 'w-60' : 'w-16'} shrink-0 flex flex-col border-r border-border bg-surface
-             transition-[width] duration-200"
+      class="{open ? 'w-60' : 'w-16'} shrink-0 flex-col border-r border-border bg-surface
+             max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50
+             max-lg:{open ? 'translate-x-0' : '-translate-x-full'}
+             max-lg:transition-transform max-lg:duration-200
+             lg:flex lg:transition-[width] lg:duration-200"
       data-testid="sidebar"
+      aria-label="Workspace navigation"
     >
-      <a href="/app" class="flex h-14 items-center gap-3 border-b border-border px-4">
+      <a href="/app" class="flex h-14 items-center gap-3 border-b border-border px-4 app-safe-top">
         <img src="/favicon.svg" alt="" class="size-6 shrink-0" />
         {#if open}<span class="text-sm font-semibold">MythForge</span>{/if}
       </a>
@@ -109,31 +147,64 @@
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="flex h-14 items-center justify-between border-b border-border px-6">
-        <div class="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onclick={() => (open = !open)} aria-label="Toggle sidebar">
-            {open ? 'Collapse' : 'Expand'}
+      <header
+        class="app-safe-top sticky top-0 z-30 flex h-14 items-center justify-between gap-3
+               border-b border-border bg-background/95 px-4 sm:px-6"
+      >
+        <div class="flex min-w-0 items-center gap-1 sm:gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onclick={() => (open = !open)}
+            aria-label={open ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={open}
+            data-testid="toggle-sidebar"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M3 6h18M3 12h18M3 18h18" />
+            </svg>
+            <span class="hidden sm:inline">{open ? 'Collapse' : 'Expand'}</span>
           </Button>
-          <Button variant="ghost" size="sm" onclick={() => (showChat = !showChat)} data-testid="toggle-assistant">
-            Assistant
-          </Button>
-          <span class="text-sm text-muted-foreground">
+          <span class="truncate text-sm text-muted-foreground">
             {$session.user?.name ?? 'Workspace'}
           </span>
         </div>
-        <Badge variant="outline">{$session.company?.name ?? 'Workspace'}</Badge>
+        <div class="flex shrink-0 items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onclick={() => (showChat = !showChat)}
+            data-testid="toggle-assistant"
+            aria-expanded={showChat}
+          >
+            Assistant
+          </Button>
+          <Badge variant="outline" class="max-w-40 truncate">{$session.company?.name ?? 'Workspace'}</Badge>
+        </div>
       </header>
-      <main class="flex-1 overflow-auto p-6">
+      <main class="scroll-contain flex-1 overflow-auto p-4 app-safe-bottom sm:p-6">
         {@render children?.()}
       </main>
       {#if showChat}
-        <aside class="hidden w-96 shrink-0 flex-col border-l border-border bg-surface p-4 xl:flex"
-          data-testid="assistant-panel">
+        <aside
+          class="scroll-contain fixed inset-x-0 bottom-0 z-40 flex max-h-[70dvh] flex-col
+                 border-t border-border bg-surface p-4 app-safe-bottom md:static md:z-auto
+                 md:max-h-none md:w-96 md:shrink-0 md:border-t-0 md:border-l"
+          data-testid="assistant-panel"
+          role="region"
+          aria-label="Assistant"
+        >
           <div class="mb-3 flex items-center justify-between">
             <span class="text-sm font-medium">Assistant</span>
-            <Button variant="ghost" size="sm" onclick={() => (showChat = false)}>Close</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onclick={() => (showChat = false)}
+              aria-label="Close assistant"
+              data-testid="close-assistant"
+            >Close</Button>
           </div>
-          <div class="min-h-0 flex-1">
+          <div class="scroll-contain min-h-0 flex-1 overflow-y-auto">
             <ChatPanel />
           </div>
         </aside>
