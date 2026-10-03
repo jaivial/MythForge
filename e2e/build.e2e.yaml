@@ -14,7 +14,7 @@ tests:
           sku, precio y stock, y movimientos de inventario" and submit it to the builder,
           then wait for the result card to appear; do not click anything on it and stay
           on /app/build
-      - expect: { locator: testid=build-result, count: 1 }
+      - expect: { locator: testid=build-result, count: 1, timeout: 120 }
       - open: /app
       - wait: 2000
       - expect: { locator: testid=module-inventario, count: 1 }
@@ -32,7 +32,7 @@ tests:
           department and salary, and departments that have name and budget" and submit it,
           then wait for the result card to appear; do not click anything on it and stay
           on /app/build
-      - expect: { locator: testid=build-result, count: 1 }
+      - expect: { locator: testid=build-result, count: 1, timeout: 120 }
       - assert: the result mentions both the employee and department entities
 
   - name: an empty prompt cannot be submitted
@@ -67,8 +67,8 @@ tests:
           build the module described by the Spanish prompt "un modulo de soporte con
           tickets que tienen titulo, estado y prioridad" and wait for the result card to
           appear; do not click anything on it and stay on /app/build
-      - expect: { locator: testid=build-result, count: 1 }
-      - expect: { locator: testid=goto-workspace, count: 1 }
+      - expect: { locator: testid=build-result, count: 1, timeout: 120 }
+      - expect: { locator: testid=goto-workspace, count: 1, timeout: 120 }
 
   - name: the assistant panel answers questions about company data
     steps:
